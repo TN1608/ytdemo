@@ -1,7 +1,6 @@
 import type {Metadata} from "next";
 import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
-import Header from "@/components/fragments/Header";
 import {Toaster} from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -30,18 +29,8 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
         <div className="flex flex-col min-h-screen">
-            {/* Header */}
-            <Header/>
-
-            {/* Main Content */}
-            <main className="flex-grow p-4">{children}</main>
-
-            {/* Footer */}
-            <footer className="bg-gray-100 p-4 text-center">
-                <p>&copy; {new Date().getFullYear()} My App</p>
-            </footer>
+            {children}
             <Toaster/>
-
         </div>
         </body>
         </html>

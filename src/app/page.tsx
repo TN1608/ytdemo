@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 import {getPlaylistItems} from "@/services/search";
 import VideoPlayer from "@/components/VideoPlayer";
 import {Skeleton} from "@/components/ui/skeleton";
+import Header from "@/components/fragments/Header";
 
 export default function Home() {
     const [videos, setVideos] = useState<PlaylistItem[]>([]);
@@ -38,20 +39,31 @@ export default function Home() {
         fetchVideos()
     }, []);
     return (
-        <div className="container mx-auto p-4">
-            {/*Loading , skeleton, yt title*/}
-            {loading && <Skeleton
-                className="h-8 w-1/3 mb-4"
-            />
-            }
-            <h1 className={"text-2xl font-bold mb-4"}>
-                {error ? error : 'YouTube Playlist'}
-            </h1>
-            <VideoPlayer
-                videoId={currentVideoId}
-                playlistItems={videos}
-                onVideoSelect={handleVideoSelect}
-            />
-        </div>
+        <>
+            {/* Header */}
+            <Header onSearch={(query: string) => {
+            }}/>
+            <main className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
+                <section className="flex-1">
+                    {/* Loading, skeleton, yt title */}
+                    {loading && (
+                        <Skeleton className="h-8 w-1/3 mb-4"/>
+                    )}
+                    <h1 className="text-2xl font-bold mb-4">
+                        {error ? error : 'YouTube Playlist'}
+                    </h1>
+                    <VideoPlayer
+                        videoId={currentVideoId}
+                        videos={videos}
+                        onVideoSelect={handleVideoSelect}
+                    />
+                </section>
+                {/* You can add a sidebar or playlist list here if needed */}
+            </main>
+            {/* Footer */}
+            <footer className="bg-gray-100 text-center p-4 mt-8">
+                <p className="text-gray-600">© 2023 Your YouTube Playlist App</p>
+            </footer>
+        </>
     );
 }
