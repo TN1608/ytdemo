@@ -1,18 +1,17 @@
-import api from "@/utils/axios";
-import type {PlaylistItemsResponse, SearchResponse} from "@/types";
+import api from '@/utils/axios';
+import type { PlaylistItemsResponse, SearchResponse } from '@/types';
 
-interface searchParams {
-    query: string,
+interface SearchParams {
+    query: string;
     maxResults?: number;
 }
 
-interface getPlaylistItemsParams {
+interface GetPlaylistItemsParams {
     playlistId: string;
     maxResults?: number;
 }
 
-// params: ?part=snippet&maxResults=10&playlistId=YOUR_PLAYLIST_ID&key=${process.env.YOUTUBE_API_KEY}
-export const search = async (query: string, maxResults: 10): Promise<SearchResponse> => {
+export const search = async ({ query, maxResults = 10 }: SearchParams): Promise<SearchResponse> => {
     try {
         const resp = await api.get<SearchResponse>('/search', {
             params: {
@@ -26,21 +25,21 @@ export const search = async (query: string, maxResults: 10): Promise<SearchRespo
     } catch (error) {
         console.error('Error searching videos:', error);
         return {
-            kind: "youtube#searchListResponse",
-            etag: "some-etag",
+            kind: 'youtube#searchListResponse',
+            etag: 'some-etag',
             items: [],
             pageInfo: {
                 totalResults: 0,
-                resultsPerPage: 0
-            }
+                resultsPerPage: 0,
+            },
         } as SearchResponse;
     }
 };
 
 export const getPlaylistItems = async ({
                                            playlistId,
-                                           maxResults = 10
-                                       }: getPlaylistItemsParams): Promise<PlaylistItemsResponse> => {
+                                           maxResults = 10,
+                                       }: GetPlaylistItemsParams): Promise<PlaylistItemsResponse> => {
     try {
         const resp = await api.get<PlaylistItemsResponse>('/playlistItems', {
             params: {
@@ -53,15 +52,15 @@ export const getPlaylistItems = async ({
     } catch (err) {
         console.error('Lỗi khi lấy danh sách video trong playlist:', err);
         return {
-            kind: "youtube#playlistItemListResponse",
-            etag: "some-etag",
+            kind: 'youtube#playlistItemListResponse',
+            etag: 'some-etag',
             items: [],
             pageInfo: {
                 totalResults: 0,
-                resultsPerPage: 0
+                resultsPerPage: 0,
             },
             nextPageToken: undefined,
-            prevPageToken: undefined
+            prevPageToken: undefined,
         } as PlaylistItemsResponse;
     }
 };
