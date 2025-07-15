@@ -7,6 +7,7 @@ import {Separator} from '@/components/ui/separator';
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
 import {FormEvent, useState} from 'react';
+import {ThemeToggleButton} from "@/components/ui/ThemeToggleButton";
 
 interface HeaderProps {
     onSearch: (query: string) => void;
@@ -61,6 +62,9 @@ const Header = ({onSearch}: HeaderProps) => {
                     Search
                 </Button>
             </form>
+            <div className="flex items-center gap-2">
+                <ThemeToggleButton variant="circle-blur" start="bottom-right" />
+            </div>
         </div>
     );
 };

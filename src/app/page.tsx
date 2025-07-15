@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import {useEffect, useState} from 'react';
@@ -9,8 +8,6 @@ import {Skeleton} from '@/components/ui/skeleton';
 import Header from '@/components/fragments/Header';
 import {debounce} from 'lodash';
 import {Separator} from "@/components/ui/separator";
-import Silk from "@/components/Silk";
-import Waves from "@/components/Wakes";
 
 export default function Home() {
     const [videos, setVideos] = useState<(PlaylistItem | SearchResult)[]>([]);
@@ -67,15 +64,15 @@ export default function Home() {
             <main className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
                 <section className="flex-1">
                     {loading && <Skeleton className="h-8 w-1/3 mb-4"/>}
-                    <h1 className="text-2xl font-bold mb-4">
-                        {error ? error : videos.length > 0 && 'resourceId' in videos[0].snippet ? 'YouTube Playlist' : 'Search Results'}
-                    </h1>
-                    <Separator/>
-                    <h1 className="text-3xl uppercase font-bold mt-4 mb-2">
-                        {videos.length > 0
-                            ? videos[0]?.snippet.title
-                            : 'Select a video to play'}
-                    </h1>
+                    {/*<h1 className="text-2xl font-bold mb-4">*/}
+                    {/*    {error ? error : videos.length > 0 && 'resourceId' in videos[0].snippet ? 'YouTube Playlist' : 'Search Results'}*/}
+                    {/*</h1>*/}
+                    {/*<Separator/>*/}
+                    {/*<h1 className="text-3xl uppercase font-bold mt-4 mb-2">*/}
+                    {/*    {videos.length > 0*/}
+                    {/*        ? videos[0]?.snippet.title*/}
+                    {/*        : 'Select a video to play'}*/}
+                    {/*</h1>*/}
                     <VideoPlayer videoId={currentVideoId} videos={videos} onVideoSelect={handleVideoSelect}/>
                 </section>
             </main>
