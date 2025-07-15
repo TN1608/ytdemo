@@ -1,13 +1,13 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {getPlaylistItems, search} from '@/services/search';
+import {getPlaylistItems, getSavedVideos, index, removeVideo, saveVideo} from '@/services';
 import type {PlaylistItem, SearchResponse, SearchResult} from '@/types';
 import VideoPlayer from '@/components/VideoPlayer';
 import {Skeleton} from '@/components/ui/skeleton';
 import Header from '@/components/fragments/Header';
 import {debounce} from 'lodash';
-import {Separator} from "@/components/ui/separator";
+import {toast} from "sonner"
 
 export default function Home() {
     const [videos, setVideos] = useState<(PlaylistItem | SearchResult)[]>([]);
@@ -46,17 +46,35 @@ export default function Home() {
         setLoading(true);
         setError(null);
         try {
-            const data: SearchResponse = await search(query, 10);
+            const data: SearchResponse = await index(query, 10);
             setVideos(data.items);
             if (data.items.length > 0) {
                 setCurrentVideoId(data.items[0].id.videoId);
             }
         } catch (err: any) {
-            setError('Failed to search videos: ' + (err.response?.data?.error || err.message));
+            setError('Failed to index videos: ' + (err.response?.data?.error || err.message));
         } finally {
             setLoading(false);
         }
     }, 500);
+
+    const handleSave = async (videoId: string) => {
+        try {
+            const response = await saveVideo(videoId);
+            toast.success(response.message || 'Video saved successfully');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to save video');
+        }
+    };
+
+    const handleRemove = async (videoId: string) => {
+        try {
+            const response = await removeVideo(videoId);
+            toast.success(response.message || 'Video removed successfully');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to remove video');
+        }
+    };
 
     return (
         <div>
@@ -73,7 +91,8 @@ export default function Home() {
                     {/*        ? videos[0]?.snippet.title*/}
                     {/*        : 'Select a video to play'}*/}
                     {/*</h1>*/}
-                    <VideoPlayer videoId={currentVideoId} videos={videos} onVideoSelect={handleVideoSelect}/>
+                    <VideoPlayer videoId={currentVideoId} videos={videos} onVideoSelect={handleVideoSelect}
+                                 onSave={handleSave} onRemove={handleRemove}/>
                 </section>
             </main>
         </div>

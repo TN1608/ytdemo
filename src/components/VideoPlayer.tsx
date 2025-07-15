@@ -2,17 +2,27 @@
 
 import type {PlaylistItem, SearchResult} from '@/types';
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {useState} from "react";
 
 interface VideoPlayerProps {
     videoId: string;
     videos: (PlaylistItem | SearchResult)[];
     onVideoSelect: (videoId: string) => void;
+    onSave?: (videoId: string) => void;
+    onRemove?: (videoId: string) => void;
+    savedVideoIds?: string[];
 }
 
-export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlayerProps) {
+export default function VideoPlayer({
+                                        videoId,
+                                        videos,
+                                        onVideoSelect,
+                                        onSave,
+                                        onRemove,
+                                    }: VideoPlayerProps) {
     return (
         <div className="flex flex-col lg:flex-row gap-4 bg-background min-h-screen text-foreground font-sans">
-
             <div className="w-full lg:w-[calc(100%-400px)] flex flex-col px-4 lg:px-8 pt-6 bg-background">
                 <div className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl"
                      style={{paddingBottom: '56.25%'}}>
@@ -27,7 +37,7 @@ export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlaye
                 </div>
                 <div className="w-full max-w-5xl mx-auto mt-6">
                     <h1 className="text-xl lg:text-2xl font-semibold text-foreground mb-3 line-clamp-2">
-                        {videos.find(v => {
+                        {videos.find((v) => {
                             const isPlaylistItem = 'resourceId' in v.snippet;
                             const vid = isPlaylistItem
                                 ? (v as PlaylistItem).snippet.resourceId?.videoId
@@ -36,14 +46,25 @@ export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlaye
                         })?.snippet.title}
                     </h1>
                     <div className="flex items-center gap-4 mb-4">
-                        <div
-                            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                            {/* Placeholder for channel icon */}
-                            <span className="text-lg">C</span>
-                        </div>
+                        {(() => {
+                            const thumbnailUrl = videos.find((v) => {
+                                const isPlaylistItem = 'resourceId' in v.snippet;
+                                const vid = isPlaylistItem
+                                    ? (v as PlaylistItem).snippet.resourceId?.videoId
+                                    : (v as SearchResult).id.videoId;
+                                return vid === videoId;
+                            })?.snippet.thumbnails?.default?.url;
+                            return thumbnailUrl ? (
+                                <img
+                                    src={thumbnailUrl}
+                                    alt="Channel Thumbnail"
+                                    className="w-10 h-10 rounded-full"
+                                />
+                            ) : null;
+                        })()}
                         <div>
                             <p className="text-sm font-medium text-foreground">
-                                {videos.find(v => {
+                                {videos.find((v) => {
                                     const isPlaylistItem = 'resourceId' in v.snippet;
                                     const vid = isPlaylistItem
                                         ? (v as PlaylistItem).snippet.resourceId?.videoId
@@ -51,16 +72,47 @@ export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlaye
                                     return vid === videoId;
                                 })?.snippet.channelTitle}
                             </p>
-                            <p className="text-xs text-muted-foreground">123K subscribers</p>
+                            <p className="text-xs text-muted-foreground">
+                                {(() => {
+                                    const video = videos.find((v) => {
+                                        const isPlaylistItem = 'resourceId' in v.snippet;
+                                        const vid = isPlaylistItem
+                                            ? (v as PlaylistItem).snippet.resourceId?.videoId
+                                            : (v as SearchResult).id.videoId;
+                                        return vid === videoId;
+                                    });
+                                    if (!video?.snippet.publishedAt) return '';
+                                    const date = new Date(video.snippet.publishedAt);
+                                    return date.toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
+                                })()}
+                            </p>
                         </div>
-                        <button
-                            className="ml-auto bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-full hover:bg-primary/90 transition">
-                            Subscribe
-                        </button>
+                        <div className="ml-auto flex items-center gap-2">
+                            {onSave && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onSave(videoId)}
+                                    className="text-xs"
+                                >
+                                    Save
+                                </Button>
+                            )}
+                            {onRemove && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => onRemove(videoId)}
+                                    className="text-xs"
+                                >
+                                    Remove
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     <div className="bg-card rounded-xl p-4">
                         <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                            {videos.find(v => {
+                            {videos.find((v) => {
                                 const isPlaylistItem = 'resourceId' in v.snippet;
                                 const vid = isPlaylistItem
                                     ? (v as PlaylistItem).snippet.resourceId?.videoId
@@ -72,9 +124,7 @@ export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlaye
                     </div>
                 </div>
             </div>
-            {/* Video List Section */}
-            <div
-                className="w-full lg:w-[400px] bg-background h-auto lg:h-[calc(100vh-80px)] px-4 py-6">
+            <div className="w-full lg:w-[400px] bg-background h-auto lg:h-[calc(100vh-80px)] px-4 py-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                     {videos.length > 0 && 'resourceId' in videos[0].snippet ? 'Playlist Videos' : 'Up Next'}
                 </h2>
@@ -101,11 +151,13 @@ export default function VideoPlayer({videoId, videos, onVideoSelect}: VideoPlaye
                                             className="w-full h-full object-cover rounded-md"
                                         />
                                     </CardContent>
-                                    <CardHeader className="flex-1 pl-4">
-                                        <CardTitle
-                                            className="text-sm text-foreground line-clamp-2">{item.snippet.title}</CardTitle>
-                                        <CardDescription
-                                            className="text-xs text-muted-foreground line-clamp-2">{item.snippet.description}</CardDescription>
+                                    <CardHeader className="flex-1 pl-4 flex items-center justify-between">
+                                        <div>
+                                            <CardTitle
+                                                className="text-sm text-foreground line-clamp-2">{item.snippet.title}</CardTitle>
+                                            <CardDescription
+                                                className="text-xs text-muted-foreground line-clamp-2">{item.snippet.description}</CardDescription>
+                                        </div>
                                     </CardHeader>
                                 </CardAction>
                             </Card>

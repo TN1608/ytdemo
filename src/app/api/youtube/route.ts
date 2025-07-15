@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {search} from "@/services/search";
+import {index} from "@/services";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const data = await search({ query, maxResults });
+        const data = await index({ query, maxResults });
         return NextResponse.json(data);
     } catch (error) {
         console.error('Error in API route:', error);
-        return NextResponse.json({ error: 'Failed to search videos' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to index videos' }, { status: 500 });
     }
 }

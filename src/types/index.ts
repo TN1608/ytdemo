@@ -64,7 +64,7 @@ export interface PlaylistItemsResponse {
     items: PlaylistItem[];
 }
 
-// Định nghĩa kiểu response cho endpoint /search
+// Định nghĩa kiểu response cho endpoint /index
 export interface SearchResponse {
     kind: string;
     etag: string;
