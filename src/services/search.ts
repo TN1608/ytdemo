@@ -12,13 +12,12 @@ interface getPlaylistItemsParams {
 }
 
 // params: ?part=snippet&maxResults=10&playlistId=YOUR_PLAYLIST_ID&key=${process.env.YOUTUBE_API_KEY}
-export const search = async (query: string, maxResults: 10): Promise<SearchResponse> => {
+export const search = async (query: string, maxResults: number = 10): Promise<SearchResponse> => {
     try {
         const resp = await api.get<SearchResponse>('/search', {
             params: {
                 part: 'snippet',
-                q: query,
-                type: 'video',
+                query,
                 maxResults,
             },
         });
@@ -42,7 +41,7 @@ export const getPlaylistItems = async ({
                                            maxResults = 10
                                        }: getPlaylistItemsParams): Promise<PlaylistItemsResponse> => {
     try {
-        const resp = await api.get<PlaylistItemsResponse>('/playlistItems', {
+        const resp = await api.get<PlaylistItemsResponse>('/getPlaylist', {
             params: {
                 part: 'snippet',
                 playlistId,
@@ -51,7 +50,7 @@ export const getPlaylistItems = async ({
         });
         return resp.data;
     } catch (err) {
-        console.error('Lỗi khi lấy danh sách video trong playlist:', err);
+        console.error('Error fetching playlist items:', err);
         return {
             kind: "youtube#playlistItemListResponse",
             etag: "some-etag",
