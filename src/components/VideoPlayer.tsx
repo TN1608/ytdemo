@@ -8,6 +8,8 @@ import {BsThreeDotsVertical} from "react-icons/bs";
 import {AiOutlineDislike, AiOutlineLike} from "react-icons/ai";
 import {Badge} from "@/components/ui/badge";
 import {Switch} from "@/components/ui/switch";
+import {Minimize2} from 'lucide-react';
+import {useMiniPlayerStore} from "@/utils/miniPlayerStore";
 
 interface VideoPlayerProps {
     videoId: string;
@@ -20,7 +22,6 @@ interface VideoPlayerProps {
     savedVideos?: string[];
     likedVideos?: LikedVideo[];
     dislikedVideos?: string[];
-    onToggleMiniPlayer?: () => void;
 }
 
 export default function VideoPlayer({
@@ -34,7 +35,6 @@ export default function VideoPlayer({
                                         savedVideos,
                                         likedVideos,
                                         dislikedVideos,
-                                        onToggleMiniPlayer,
                                     }: VideoPlayerProps) {
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -42,12 +42,13 @@ export default function VideoPlayer({
     const [isDisliking, setIsDisliking] = useState<boolean>(false);
     const [isLiked, setIsLiked] = useState<boolean>(false);
     const [isDisliked, setIsDisliked] = useState<boolean>(false);
+    const { toggleMiniPlayer, setMiniPlayerVideoId } = useMiniPlayerStore();
 
     const handleSave = async () => {
         if (onSave) {
             setIsSaving(true);
             try {
-                onSave(videoId);
+                await onSave(videoId);
                 setIsSaved(true);
             } catch (error) {
                 console.error('Error saving video:', error);
@@ -61,7 +62,7 @@ export default function VideoPlayer({
         if (onRemove) {
             setIsSaving(true);
             try {
-                onRemove(videoId);
+                await onRemove(videoId);
                 setIsSaved(false);
             } catch (error) {
                 console.error('Error removing video:', error);
@@ -75,7 +76,7 @@ export default function VideoPlayer({
         if (onLike) {
             setIsLiking(true);
             try {
-                onLike(videoId);
+                await onLike(videoId);
                 if (isLiked) {
                     setIsLiked(false);
                 } else {
@@ -96,7 +97,7 @@ export default function VideoPlayer({
         if (onDislike) {
             setIsDisliking(true);
             try {
-                onDislike(videoId);
+                await onDislike(videoId);
                 if (isDisliked) {
                     setIsDisliked(false);
                 } else {
@@ -118,6 +119,11 @@ export default function VideoPlayer({
         setIsLiked(likedVideos ? likedVideos.some(video => video.videoId === videoId && video.status === true) : false);
         setIsDisliked(likedVideos ? likedVideos.some(video => video.videoId === videoId && video.status === false) : false);
     }, [videoId, savedVideos, likedVideos, dislikedVideos]);
+
+    const handleToggleMiniPlayer = () => {
+        setMiniPlayerVideoId(videoId);
+        toggleMiniPlayer();
+    };
 
     return (
         <div className="flex flex-col lg:flex-row gap-4 bg-background min-h-screen text-foreground font-sans">
@@ -187,7 +193,7 @@ export default function VideoPlayer({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`rounded-none border-r border-muted cursor-pointer ${isDisliking ? 'fill-blue-700 text-blue-700' : 'text-foreground'} hover:bg-muted`}
+                                    className={`rounded-none border-r border-muted cursor-pointer ${isDisliked ? 'bg-blue-100 text-blue-700' : 'text-foreground'} hover:bg-muted`}
                                     onClick={handleDislike}
                                     disabled={isDisliking}
                                 >
@@ -203,7 +209,7 @@ export default function VideoPlayer({
                                 onClick={isSaved ? handleRemove : handleSave}
                                 disabled={isSaving}
                             >
-                                {isSaving ? '...' : isSaved ? '✓ Saved' : '🔖 Save'}
+                                {isSaving ? '...' : isSaved ? '✓ Đã lưu' : '🔖 Lưu'}
                             </Button>
 
                             <Button
@@ -211,7 +217,7 @@ export default function VideoPlayer({
                                 size="sm"
                                 className="rounded-full text-foreground hover:bg-card"
                             >
-                                🔗 Share
+                                🔗 Chia sẻ
                             </Button>
 
                             <Button
@@ -219,7 +225,7 @@ export default function VideoPlayer({
                                 size="sm"
                                 className="rounded-full text-foreground hover:bg-card"
                             >
-                                ⬇️ Download
+                                ⬇️ Tải xuống
                             </Button>
 
                             <Button
@@ -227,7 +233,7 @@ export default function VideoPlayer({
                                 size="sm"
                                 className="rounded-full text-foreground hover:bg-card"
                             >
-                                ✂️ Clip
+                                ✂️ Cắt
                             </Button>
                         </div>
 
@@ -235,9 +241,9 @@ export default function VideoPlayer({
                             variant="ghost"
                             size="sm"
                             className="rounded-full text-foreground hover:bg-card"
-                            onClick={onToggleMiniPlayer}
+                            onClick={handleToggleMiniPlayer}
                         >
-                            🔽 Mini Player
+                            <Minimize2 className="w-4 h-4 mr-1"/> Mini Player
                         </Button>
                     </div>
 
@@ -261,7 +267,7 @@ export default function VideoPlayer({
                         })()}
                         <div className="flex-1">
                             <div className="flex items-center">
-                                <p className="text-base font-medium text-white">
+                                <p className="text-base font-medium text-foreground">
                                     {videos.find((item) => {
                                         const isPlaylistItem = 'resourceId' in item.snippet;
                                         const vid = isPlaylistItem
@@ -288,11 +294,11 @@ export default function VideoPlayer({
                     {/* Video description */}
                     <div className="bg-card rounded-xl p-4 mb-6">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="text-foreground font-medium text-sm">Description</span>
+                            <span className="text-foreground font-medium text-sm">Mô tả</span>
                             <div className="flex-1 border-t border-muted"></div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                            <span>123,456 views</span>
+                            <span>123,456 lượt xem</span>
                             <span className="mx-1">•</span>
                             <span>
                                 {(() => {
@@ -321,8 +327,8 @@ export default function VideoPlayer({
                                 return vid === videoId;
                             })?.snippet.description}
                         </p>
-                        <button className="text-sm text-muted-foreground hover:text-foreground mt-2 font-medium">Show
-                            more
+                        <button className="text-sm text-muted-foreground hover:text-foreground mt-2 font-medium">
+                            Xem thêm
                         </button>
                     </div>
                 </div>
@@ -333,16 +339,16 @@ export default function VideoPlayer({
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <h2 className="text-base font-medium text-foreground">
-                            {videos.length > 0 && 'resourceId' in videos[0].snippet ? 'Playlist' : 'Up Next'}
+                            {videos.length > 0 && 'resourceId' in videos[0].snippet ? 'Danh sách phát' : 'Tiếp theo'}
                         </h2>
                         {videos.length > 0 && 'resourceId' in videos[0].snippet && (
                             <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">{videos.length}</span> videos
+                                <span className="font-medium">{videos.length}</span> video
                             </div>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Autoplay</span>
+                        <span className="text-xs text-muted-foreground">Tự động phát</span>
                         <Switch
                             id="autoplay"
                             defaultChecked
@@ -354,19 +360,19 @@ export default function VideoPlayer({
                 <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
                     <div
                         className="bg-primary-foreground text-primary text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap">
-                        All
+                        Tất cả
                     </div>
                     <div
                         className="bg-card text-foreground text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap">
-                        Related
+                        Liên quan
                     </div>
                     <div
                         className="bg-card text-foreground text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap">
-                        Recently uploaded
+                        Tải lên gần đây
                     </div>
                     <div
                         className="bg-card text-foreground text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap">
-                        Watched
+                        Đã xem
                     </div>
                 </div>
 
@@ -381,19 +387,11 @@ export default function VideoPlayer({
                         return (
                             <div
                                 key={itemId}
-                                className={`flex cursor-pointer hover:bg-card transition-colors duration-200 rounded-lg overflow-hidden p-1 ${
-                                    itemVideoId === videoId ? 'bg-card' : ''
-                                }`}
+                                className={`flex cursor-pointer hover:bg-card transition-colors duration-200 rounded-lg overflow-hidden p-1 ${itemVideoId === videoId ? 'bg-card' : ''}`}
                                 onClick={() => onVideoSelect(itemVideoId || '')}
                             >
                                 {/* Thumbnail */}
                                 <div className="flex-shrink-0 relative w-40 h-20">
-                                    {/*{videos.length > 0 && 'resourceId' in videos[0].snippet && (*/}
-                                    {/*    <div*/}
-                                    {/*        className="absolute top-0 left-0 bg-primary bg-opacity-80 text-primary-foreground text-xs px-1">*/}
-                                    {/*        {index + 1}*/}
-                                    {/*    </div>*/}
-                                    {/*)}*/}
                                     <img
                                         src={item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url}
                                         alt={item.snippet.title}
@@ -419,14 +417,14 @@ export default function VideoPlayer({
                                             )}
                                         </div>
                                         <div className="flex items-center text-xs text-muted-foreground mt-0.5">
-                                            <span>{Math.floor(Math.random() * 900) + 100}K views</span>
+                                            <span>{Math.floor(Math.random() * 900) + 100}K lượt xem</span>
                                             <span className="mx-1">•</span>
-                                            <span>{Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'months' : 'days'} ago</span>
+                                            <span>{Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'tháng' : 'ngày'} trước</span>
                                         </div>
                                         {Math.random() > 0.8 && (
                                             <div
                                                 className="mt-1 bg-card text-[10px] text-foreground px-1 py-0.5 rounded inline-block">
-                                                New
+                                                Mới
                                             </div>
                                         )}
                                     </div>
@@ -434,7 +432,7 @@ export default function VideoPlayer({
 
                                 {/* Menu button */}
                                 <button className="text-muted-foreground hover:text-foreground p-1">
-                                    <BsThreeDotsVertical className={"text-lg"}/>
+                                    <BsThreeDotsVertical className="text-lg"/>
                                 </button>
                             </div>
                         );

@@ -1,8 +1,8 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {X, Play, Pause, Maximize2} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { X, Play, Pause, Maximize2 } from 'lucide-react';
 import Draggable from 'react-draggable';
 
 interface MiniPlayerProps {
@@ -11,7 +11,7 @@ interface MiniPlayerProps {
     onMaximize: () => void;
 }
 
-export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerProps) {
+export default function MiniPlayer({ videoId, onClose, onMaximize }: MiniPlayerProps) {
     const playerRef = useRef<any>(null);
     const draggableRef = useRef<HTMLDivElement>(null);
     const [playerState, setPlayerState] = useState<number>(-1); // -1: unstarted, 1: playing, 2: paused
@@ -25,7 +25,6 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
             const firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
-            // Đợi API tải xong
             window.onYouTubeIframeAPIReady = () => {
                 setIsApiLoaded(true);
             };
@@ -80,8 +79,7 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
                 ref={draggableRef}
                 className="fixed bottom-4 right-4 w-80 bg-background border border-muted rounded-lg shadow-lg z-50 hover:shadow-xl transition-shadow duration-300"
             >
-                <div
-                    className="drag-handle cursor-move bg-card p-1 flex items-center justify-between rounded-t-lg border-b border-muted">
+                <div className="drag-handle cursor-move bg-card p-1 flex items-center justify-between rounded-t-lg border-b border-muted">
                     <div className="flex items-center">
                         <div className="w-2 h-2 rounded-full bg-red-500 mx-1"></div>
                         <div className="w-2 h-2 rounded-full bg-yellow-500 mx-1"></div>
@@ -89,7 +87,7 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
                     </div>
                     <div className="text-xs text-muted-foreground">Kéo để di chuyển</div>
                 </div>
-                <div className="relative w-full" style={{paddingBottom: '56.25%'}}>
+                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                     <div id="mini-player-iframe" className="absolute top-0 left-0 w-full h-full"></div>
                 </div>
                 <div className="p-2 flex items-center justify-between bg-card rounded-b-lg">
@@ -100,7 +98,7 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
                         className="text-foreground hover:bg-muted"
                         disabled={!playerRef.current}
                     >
-                        {playerState === 1 ? <Pause className="w-4 h-4"/> : <Play className="w-4 h-4"/>}
+                        {playerState === 1 ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </Button>
                     <div className="flex items-center gap-2">
                         <Button
@@ -110,7 +108,7 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
                             className="text-foreground hover:bg-muted"
                             title="Phóng to"
                         >
-                            <Maximize2 className="w-4 h-4"/>
+                            <Maximize2 className="w-4 h-4" />
                         </Button>
                         <Button
                             variant="ghost"
@@ -119,7 +117,7 @@ export default function MiniPlayer({videoId, onClose, onMaximize}: MiniPlayerPro
                             className="text-foreground hover:bg-muted"
                             title="Đóng"
                         >
-                            <X className="w-4 h-4"/>
+                            <X className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>

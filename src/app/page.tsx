@@ -168,7 +168,6 @@ export default function Home() {
                         likedVideos={likedVideos}
                         onLike={handleLike}
                         onDislike={handleDislike}
-                        onToggleMiniPlayer={toggleMiniPlayer}
                     />
                     {isMiniPlayerOpen && (
                         <MiniPlayer
