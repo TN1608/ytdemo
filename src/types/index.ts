@@ -74,6 +74,20 @@ export interface SearchResponse {
     items: SearchResult[];
 }
 
+export interface SavedVideo {
+    id: string;
+    description: string;
+    thumbnail: string;
+    savedAt: string;
+    videoId: string;
+    title: string;
+}
+
+export interface SavedVideosResponse {
+    message: string;
+    videos: SavedVideo[];
+}
+
 export interface LikedVideo {
     id: string;
     videoId: string;

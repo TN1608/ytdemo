@@ -129,23 +129,26 @@ export default function Home() {
         try{
             const isAlreadyLiked = likedVideos.some(video => video.videoId === videoId && video.status);
             const status = !isAlreadyLiked;
-            const response = await likeVideo(videoId, status);
+            if(!isAlreadyLiked) {
+                const response = await likeVideo(videoId, true);
+            }
             await fetchLikedVideos();
         }catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to like video');
         }
     }
 
-    const handleDislike = async (videoId: string) => {
-        try {
-            const isAlreadyDisliked = likedVideos.some(video => video.videoId === videoId && !video.status);
-            const status = !isAlreadyDisliked;
-            const response = await likeVideo(videoId, status);
+const handleDislike = async (videoId: string) => {
+    try {
+        const isAlreadyDisliked = likedVideos.some(video => video.videoId === videoId && video.status === false);
+        if (!isAlreadyDisliked) {
+            const response = await likeVideo(videoId, false);
             await fetchLikedVideos();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Failed to dislike video');
         }
+    } catch (err: any) {
+        toast.error(err.response?.data?.error || 'Failed to dislike video');
     }
+}
 
     const toggleMiniPlayer = () => {
         setIsMiniPlayerOpen(prev => !prev);

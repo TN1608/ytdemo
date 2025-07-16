@@ -8,12 +8,14 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
-import { useState } from "react";
+import {useEffect, useState} from "react";
+import {LikedVideo, SavedVideo} from "@/types";
+import {getLikedVideos, getSavedVideos} from "@/services";
 
 const ProfilePage = () => {
     const router = useRouter();
-    const [savedVideos, setSavedVideos] = useState([]);
-    const [likedVideos, setLikedVideos] = useState([]);
+    const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
+    const [likedVideos, setLikedVideos] = useState<LikedVideo[]>([]);
 
     const handleSearch = debounce((query: string) => {
         if (query.trim()) {
@@ -21,21 +23,34 @@ const ProfilePage = () => {
         }
     }, 500);
 
-    const getSavedVideos = async () => {
+    const fetchSavedVideos = async () => {
         try{
             const response = await getSavedVideos()
-            setSavedVideos(response?.videos || []);
+            setSavedVideos(response.videos);
         }catch (err: any) {
             console.error('Error fetching saved videos:', err);
         }
     }
+
+    const fetchLikedVideos = async () => {
+        try {
+            const response = await getLikedVideos();
+            setLikedVideos(response?.videos);
+        } catch (err: any) {
+            console.error('Error fetching liked videos:', err);
+        }
+    }
+
+    useEffect(() => {
+        getSavedVideos();
+        getLikedVideos();
+    }, []);
 
     return (
         <div>
             <Header onSearch={handleSearch}/>
             <main className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
                 <section className="flex-1">
-                    {/*    Tabs chia ra video da like va video da luu    */}
                     <Tabs
                         defaultValue="tab-1"
                         orientation="vertical"
@@ -43,30 +58,42 @@ const ProfilePage = () => {
                     >
                         <TabsList className="flex-col">
                             <TabsTrigger value="tab-1" className="w-full">
-                                Overview
+                                Liked Videos
                             </TabsTrigger>
                             <TabsTrigger value="tab-2" className="w-full">
-                                Projects
-                            </TabsTrigger>
-                            <TabsTrigger value="tab-3" className="w-full">
-                                Packages
+                                Saved Videos
                             </TabsTrigger>
                         </TabsList>
                         <div className="grow rounded-md border text-start">
                             <TabsContent value="tab-1">
-                                <p className="text-muted-foreground px-4 py-3 text-xs">
-                                    Content for Tab 1
-                                </p>
+                                <div className="p-4">
+                                    {likedVideos.length > 0 ? (
+                                        likedVideos.map(video => (
+                                            <div key={video.videoId} className="mb-4">
+                                                <h3 className="text-lg font-semibold">{video.videoId}</h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {video.status ? 'Liked' : 'Disliked'} at {new Date(video.updatedAt).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">No liked videos found.</p>
+                                    )}
+                                </div>
                             </TabsContent>
                             <TabsContent value="tab-2">
-                                <p className="text-muted-foreground px-4 py-3 text-xs">
-                                    Content for Tab 2
-                                </p>
-                            </TabsContent>
-                            <TabsContent value="tab-3">
-                                <p className="text-muted-foreground px-4 py-3 text-xs">
-                                    Content for Tab 3
-                                </p>
+                                <div className="p-4">
+                                    {savedVideos.length > 0 ? (
+                                        savedVideos.map(video => (
+                                            <div key={video.videoId} className="mb-4">
+                                                <h3 className="text-lg font-semibold">{video.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{video.description}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">No saved videos found.</p>
+                                    )}
+                                </div>
                             </TabsContent>
                         </div>
                     </Tabs>
