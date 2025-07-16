@@ -74,6 +74,18 @@ export interface SearchResponse {
     items: SearchResult[];
 }
 
+export interface LikedVideo {
+    id: string;
+    videoId: string;
+    status: boolean;
+    updatedAt: string;
+}
+
+export interface LikedVideosResponse {
+    message: string;
+    videos: LikedVideo[];
+}
+
 
 //API ENDPOINT JSON
 // {

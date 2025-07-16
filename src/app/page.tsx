@@ -1,17 +1,22 @@
 'use client';
 
 import {useCallback, useEffect, useState} from 'react';
-import {getPlaylistItems, getSavedVideos, index, removeVideo, saveVideo} from '@/services';
-import type {PlaylistItem, SearchResponse, SearchResult} from '@/types';
+import {useSearchParams} from 'next/navigation';
+import {getLikedVideos, getPlaylistItems, getSavedVideos, index, likeVideo, removeVideo, saveVideo} from '@/services';
+import type {LikedVideo, LikedVideosResponse, PlaylistItem, SearchResponse, SearchResult} from '@/types';
 import VideoPlayer from '@/components/VideoPlayer';
 import {Skeleton} from '@/components/ui/skeleton';
 import Header from '@/components/fragments/Header';
 import {debounce} from 'lodash';
 import {toast} from "sonner"
+import MiniPlayer from "@/components/MiniPlayer";
 
 export default function Home() {
+    const searchParams = useSearchParams();
     const [videos, setVideos] = useState<(PlaylistItem | SearchResult)[]>([]);
     const [savedVideos, setSavedVideos] = useState<string[]>([]);
+    const [likedVideos, setLikedVideos] = useState<LikedVideo[]>([]);
+    const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState<boolean>(false);
 
     const [currentVideoId, setCurrentVideoId] = useState<string>('imXIrrk1ftQ');
     const [loading, setLoading] = useState<boolean>(false);
@@ -33,30 +38,55 @@ export default function Home() {
         }
     };
 
+    const fetchLikedVideos = async () => {
+        try {
+            const resp = await getLikedVideos();
+            setLikedVideos(resp.videos);
+        }catch (err: any) {
+            console.error('Error fetching liked videos:', err);
+            setError('Failed to fetch liked videos');
+        }
+    }
+
     useEffect(() => {
         fetchSavedVideos();
+        fetchLikedVideos();
 
         async function fetchVideos() {
             setLoading(true);
             setError(null);
             try {
-                const data = await getPlaylistItems({
-                    playlistId: 'RDimXIrrk1ftQ',
-                    maxResults: 10,
-                });
-                setVideos(data.items);
-                if (data.items.length > 0 && !currentVideoId) {
-                    setCurrentVideoId(data.items[0].snippet.resourceId?.videoId || '');
+                // Check if there's a search query in the URL
+                const searchQuery = searchParams.get('q');
+
+                if (searchQuery) {
+                    // If there's a search query, perform a search
+                    const data: SearchResponse = await index(searchQuery, 10);
+                    setVideos(data.items);
+                    if (data.items.length > 0) {
+                        setCurrentVideoId(data.items[0].id.videoId);
+                    }
+                    console.log('Search results from URL query:', data.items);
+                } else {
+                    // Otherwise, load the default playlist
+                    const data = await getPlaylistItems({
+                        playlistId: 'RDimXIrrk1ftQ',
+                        maxResults: 10,
+                    });
+                    setVideos(data.items);
+                    if (data.items.length > 0 && !currentVideoId) {
+                        setCurrentVideoId(data.items[0].snippet.resourceId?.videoId || '');
+                    }
                 }
             } catch (err) {
-                setError('Failed to load playlist.');
+                setError('Failed to load videos.');
             } finally {
                 setLoading(false);
             }
         }
 
         fetchVideos();
-    }, []);
+    }, [searchParams]);
 
     const handleSearch = debounce(async (query: string) => {
         setLoading(true);
@@ -95,6 +125,32 @@ export default function Home() {
         }
     };
 
+    const handleLike = async (videoId: string) => {
+        try{
+            const isAlreadyLiked = likedVideos.some(video => video.videoId === videoId && video.status);
+            const status = !isAlreadyLiked;
+            const response = await likeVideo(videoId, status);
+            await fetchLikedVideos();
+        }catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to like video');
+        }
+    }
+
+    const handleDislike = async (videoId: string) => {
+        try {
+            const isAlreadyDisliked = likedVideos.some(video => video.videoId === videoId && !video.status);
+            const status = !isAlreadyDisliked;
+            const response = await likeVideo(videoId, status);
+            await fetchLikedVideos();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to dislike video');
+        }
+    }
+
+    const toggleMiniPlayer = () => {
+        setIsMiniPlayerOpen(prev => !prev);
+    };
+
     return (
         <div>
             <Header onSearch={handleSearch}/>
@@ -109,7 +165,18 @@ export default function Home() {
                         onSave={handleSave}
                         onRemove={handleRemove}
                         savedVideos={savedVideos}
+                        likedVideos={likedVideos}
+                        onLike={handleLike}
+                        onDislike={handleDislike}
+                        onToggleMiniPlayer={toggleMiniPlayer}
                     />
+                    {isMiniPlayerOpen && (
+                        <MiniPlayer
+                            videoId={currentVideoId}
+                            onClose={() => setIsMiniPlayerOpen(false)}
+                            onMaximize={toggleMiniPlayer}
+                        />
+                    )}
                 </section>
             </main>
         </div>

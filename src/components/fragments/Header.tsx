@@ -30,26 +30,32 @@ const Header = ({onSearch}: HeaderProps) => {
             <div className={"items-center flex gap-1 text-foreground"}>
                 <Sheet>
                     <SheetTrigger
-                        className="text-gray-700 hover:text-gray-900 cursor-pointer rounded-md hover:bg-gray-100 transition-colors duration-200 hover:shadow-sm hover:scale-105 p-2">
+                        className="text-foreground hover:text-gray-900 cursor-pointer rounded-md hover:bg-gray-100 transition-colors duration-200 hover:shadow-sm hover:scale-105 p-2">
                         <IoMenu size={24}/>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-64">
                         <SheetHeader>
-                            <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
-                            <SheetDescription className="text-sm text-gray-600">Navigate through the
-                                app</SheetDescription>
+                            <SheetTitle className="text-lg font-semibold text-foreground">Mytube</SheetTitle>
+                            <SheetDescription className="text-sm text-secondary-foreground">
+                                Explore videos, playlists, and more
+                            </SheetDescription>
                         </SheetHeader>
                         <Separator/>
                         <div className="flex flex-col p-3">
                             <div
-                                className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
+                                className="items-center cursor-pointer flex gap-2 hover:bg-accent p-2 rounded-md transition-colors duration-200">
                                 <IoHomeOutline size={24}/>
-                                <span className="text-gray-700">Home</span>
+                                <span className="text-foreground">Home</span>
                             </div>
                             <div
-                                className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
+                                className="items-center cursor-pointer flex gap-2 hover:bg-accent p-2 rounded-md transition-colors duration-200">
                                 <RiPlayList2Line size={24}/>
-                                <span className="text-gray-700">About</span>
+                                <span className="text-foreground">About</span>
+                            </div>
+                            <div
+                                className="items-center cursor-pointer flex gap-2 hover:bg-accent p-2 rounded-md transition-colors duration-200">
+                                <RiPlayList2Line size={24}/>
+                                <Link href={'/profile'} className="text-foreground">Profile</Link>
                             </div>
                         </div>
                     </SheetContent>

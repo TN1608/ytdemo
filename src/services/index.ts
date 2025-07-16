@@ -99,3 +99,24 @@ export const removeVideo = async (videoId: string) => {
         throw new Error('Failed to remove video');
     }
 }
+
+export const likeVideo = async (videoId: string, status: boolean) => {
+    try {
+        const resp = await api.post('/likeVideo', {videoId, status});
+        return resp.data;
+    } catch (err) {
+        console.error('Error liking video:', err);
+        throw new Error('Failed to like video');
+    }
+}
+
+export const getLikedVideos = async () => {
+    try {
+        const resp = await api.get('/getLikedVideos');
+        return resp.data;
+    } catch (err) {
+        console.error('Error fetching liked videos:', err);
+        throw new Error('Failed to fetch liked videos');
+    }
+}
+
