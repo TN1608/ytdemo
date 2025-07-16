@@ -11,6 +11,7 @@ import {
 import {useEffect, useState} from "react";
 import {LikedVideo, SavedVideo} from "@/types";
 import {getLikedVideos, getSavedVideos} from "@/services";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
 
 const ProfilePage = () => {
     const router = useRouter();
@@ -24,10 +25,10 @@ const ProfilePage = () => {
     }, 500);
 
     const fetchSavedVideos = async () => {
-        try{
+        try {
             const response = await getSavedVideos()
             setSavedVideos(response.videos);
-        }catch (err: any) {
+        } catch (err: any) {
             console.error('Error fetching saved videos:', err);
         }
     }
@@ -35,15 +36,15 @@ const ProfilePage = () => {
     const fetchLikedVideos = async () => {
         try {
             const response = await getLikedVideos();
-            setLikedVideos(response?.videos);
+            setLikedVideos(response.videos);
         } catch (err: any) {
             console.error('Error fetching liked videos:', err);
         }
     }
 
     useEffect(() => {
-        getSavedVideos();
-        getLikedVideos();
+        fetchSavedVideos();
+        fetchLikedVideos();
     }, []);
 
     return (
@@ -66,15 +67,22 @@ const ProfilePage = () => {
                         </TabsList>
                         <div className="grow rounded-md border text-start">
                             <TabsContent value="tab-1">
-                                <div className="p-4">
+                                <div className="p-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {likedVideos.length > 0 ? (
                                         likedVideos.map(video => (
-                                            <div key={video.videoId} className="mb-4">
-                                                <h3 className="text-lg font-semibold">{video.videoId}</h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {video.status ? 'Liked' : 'Disliked'} at {new Date(video.updatedAt).toLocaleString()}
-                                                </p>
-                                            </div>
+                                            <Card key={video.videoId} className="flex flex-col h-full">
+                                                <CardHeader className="pb-2">
+                                                    <h3 className="text-lg font-semibold truncate">{video.title}</h3>
+                                                    <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                                                </CardHeader>
+                                                <CardContent className="flex flex-col gap-2 flex-1 justify-center">
+                                                    <img
+                                                        src={video.thumbnail}
+                                                        alt={video.title}
+                                                        className="w-full h-48 object-cover rounded-md border"
+                                                    />
+                                                </CardContent>
+                                            </Card>
                                         ))
                                     ) : (
                                         <p className="text-muted-foreground">No liked videos found.</p>
@@ -82,13 +90,22 @@ const ProfilePage = () => {
                                 </div>
                             </TabsContent>
                             <TabsContent value="tab-2">
-                                <div className="p-4">
+                                <div className="p-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {savedVideos.length > 0 ? (
                                         savedVideos.map(video => (
-                                            <div key={video.videoId} className="mb-4">
-                                                <h3 className="text-lg font-semibold">{video.title}</h3>
-                                                <p className="text-sm text-muted-foreground">{video.description}</p>
-                                            </div>
+                                            <Card key={video.videoId} className="flex flex-col h-full">
+                                                <CardHeader className="pb-2">
+                                                    <h3 className="text-lg font-semibold truncate">{video.title}</h3>
+                                                    <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                                                </CardHeader>
+                                                <CardContent className="flex flex-col gap-2 flex-1 justify-center">
+                                                    <img
+                                                        src={video.thumbnail}
+                                                        alt={video.title}
+                                                        className="w-full h-48 object-cover rounded-md border"
+                                                    />
+                                                </CardContent>
+                                            </Card>
                                         ))
                                     ) : (
                                         <p className="text-muted-foreground">No saved videos found.</p>
