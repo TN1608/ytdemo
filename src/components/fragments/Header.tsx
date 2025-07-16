@@ -8,6 +8,7 @@ import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
 import {FormEvent, useState} from 'react';
 import {ThemeToggleButton} from "@/components/ui/ThemeToggleButton";
+import Link from "next/link";
 
 interface HeaderProps {
     onSearch: (query: string) => void;
@@ -26,31 +27,37 @@ const Header = ({onSearch}: HeaderProps) => {
 
     return (
         <div className="flex items-center justify-between p-2 bg-transparent backdrop-blur-2xl">
-            <Sheet>
-                <SheetTrigger
-                    className="text-gray-700 hover:text-gray-900 cursor-pointer rounded-md hover:bg-gray-100 transition-colors duration-200 hover:shadow-sm hover:scale-105 p-2">
-                    <IoMenu size={24}/>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64">
-                    <SheetHeader>
-                        <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
-                        <SheetDescription className="text-sm text-gray-600">Navigate through the app</SheetDescription>
-                    </SheetHeader>
-                    <Separator/>
-                    <div className="flex flex-col p-3">
-                        <div
-                            className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
-                            <IoHomeOutline size={24}/>
-                            <span className="text-gray-700">Home</span>
+            <div className={"items-center flex gap-1 text-foreground"}>
+                <Sheet>
+                    <SheetTrigger
+                        className="text-gray-700 hover:text-gray-900 cursor-pointer rounded-md hover:bg-gray-100 transition-colors duration-200 hover:shadow-sm hover:scale-105 p-2">
+                        <IoMenu size={24}/>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-64">
+                        <SheetHeader>
+                            <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
+                            <SheetDescription className="text-sm text-gray-600">Navigate through the
+                                app</SheetDescription>
+                        </SheetHeader>
+                        <Separator/>
+                        <div className="flex flex-col p-3">
+                            <div
+                                className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
+                                <IoHomeOutline size={24}/>
+                                <span className="text-gray-700">Home</span>
+                            </div>
+                            <div
+                                className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
+                                <RiPlayList2Line size={24}/>
+                                <span className="text-gray-700">About</span>
+                            </div>
                         </div>
-                        <div
-                            className="items-center cursor-pointer flex gap-2 hover:bg-gray-100 p-2 rounded-md transition-colors duration-200">
-                            <RiPlayList2Line size={24}/>
-                            <span className="text-gray-700">About</span>
-                        </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
+                    </SheetContent>
+                </Sheet>
+                <Link href={"/"} className={"font-bold text-2xl transition-all text-foreground hover:scale-105"}>
+                    MyTube
+                </Link>
+            </div>
             <form onSubmit={handleSearch} className="flex items-center">
                 <Input
                     value={searchQuery}
@@ -63,7 +70,7 @@ const Header = ({onSearch}: HeaderProps) => {
                 </Button>
             </form>
             <div className="flex items-center gap-2">
-                <ThemeToggleButton variant="circle-blur" start="bottom-right" />
+                <ThemeToggleButton variant="circle-blur" start="bottom-right"/>
             </div>
         </div>
     );

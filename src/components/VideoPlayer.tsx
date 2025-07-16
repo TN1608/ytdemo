@@ -3,7 +3,7 @@
 import type {PlaylistItem, SearchResult} from '@/types';
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 interface VideoPlayerProps {
     videoId: string;
@@ -11,7 +11,7 @@ interface VideoPlayerProps {
     onVideoSelect: (videoId: string) => void;
     onSave?: (videoId: string) => void;
     onRemove?: (videoId: string) => void;
-    savedVideoIds?: string[];
+    savedVideos?: string[];
 }
 
 export default function VideoPlayer({
@@ -20,7 +20,43 @@ export default function VideoPlayer({
                                         onVideoSelect,
                                         onSave,
                                         onRemove,
+                                        savedVideos,
                                     }: VideoPlayerProps) {
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isSaved, setIsSaved] = useState<boolean>(false);
+
+    const handleSave = async () => {
+        if (onSave) {
+            setIsSaving(true);
+            try {
+                onSave(videoId);
+                setIsSaved(true);
+            } catch (error) {
+                console.error('Error saving video:', error);
+            } finally {
+                setIsSaving(false);
+            }
+        }
+    };
+
+    const handleRemove = async () => {
+        if (onRemove) {
+            setIsSaving(true);
+            try {
+                onRemove(videoId);
+                setIsSaved(false);
+            } catch (error) {
+                console.error('Error removing video:', error);
+            } finally {
+                setIsSaving(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        setIsSaved(savedVideos ? savedVideos.includes(videoId) : false);
+    }, [videoId, savedVideos]);
+
     return (
         <div className="flex flex-col lg:flex-row gap-4 bg-background min-h-screen text-foreground font-sans">
             <div className="w-full lg:w-[calc(100%-400px)] flex flex-col px-4 lg:px-8 pt-6 bg-background">
@@ -47,11 +83,11 @@ export default function VideoPlayer({
                     </h1>
                     <div className="flex items-center gap-4 mb-4">
                         {(() => {
-                            const thumbnailUrl = videos.find((v) => {
-                                const isPlaylistItem = 'resourceId' in v.snippet;
+                            const thumbnailUrl = videos.find((item) => {
+                                const isPlaylistItem = 'resourceId' in item.snippet;
                                 const vid = isPlaylistItem
-                                    ? (v as PlaylistItem).snippet.resourceId?.videoId
-                                    : (v as SearchResult).id.videoId;
+                                    ? (item as PlaylistItem).snippet.resourceId?.videoId
+                                    : (item as SearchResult).id.videoId;
                                 return vid === videoId;
                             })?.snippet.thumbnails?.default?.url;
                             return thumbnailUrl ? (
@@ -64,21 +100,21 @@ export default function VideoPlayer({
                         })()}
                         <div>
                             <p className="text-sm font-medium text-foreground">
-                                {videos.find((v) => {
-                                    const isPlaylistItem = 'resourceId' in v.snippet;
+                                {videos.find((item) => {
+                                    const isPlaylistItem = 'resourceId' in item.snippet;
                                     const vid = isPlaylistItem
-                                        ? (v as PlaylistItem).snippet.resourceId?.videoId
-                                        : (v as SearchResult).id.videoId;
+                                        ? (item as PlaylistItem).snippet.resourceId?.videoId
+                                        : (item as SearchResult).id.videoId;
                                     return vid === videoId;
                                 })?.snippet.channelTitle}
                             </p>
                             <p className="text-xs text-muted-foreground">
                                 {(() => {
-                                    const video = videos.find((v) => {
-                                        const isPlaylistItem = 'resourceId' in v.snippet;
+                                    const video = videos.find((item) => {
+                                        const isPlaylistItem = 'resourceId' in item.snippet;
                                         const vid = isPlaylistItem
-                                            ? (v as PlaylistItem).snippet.resourceId?.videoId
-                                            : (v as SearchResult).id.videoId;
+                                            ? (item as PlaylistItem).snippet.resourceId?.videoId
+                                            : (item as SearchResult).id.videoId;
                                         return vid === videoId;
                                     });
                                     if (!video?.snippet.publishedAt) return '';
@@ -88,26 +124,15 @@ export default function VideoPlayer({
                             </p>
                         </div>
                         <div className="ml-auto flex items-center gap-2">
-                            {onSave && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onSave(videoId)}
-                                    className="text-xs"
-                                >
-                                    Save
-                                </Button>
-                            )}
-                            {onRemove && (
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => onRemove(videoId)}
-                                    className="text-xs"
-                                >
-                                    Remove
-                                </Button>
-                            )}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                                onClick={isSaved ? handleRemove : handleSave}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Saving...' : isSaved ? 'Remove from Saved' : 'Save Video'}
+                            </Button>
                         </div>
                     </div>
                     <div className="bg-card rounded-xl p-4">
@@ -124,6 +149,7 @@ export default function VideoPlayer({
                     </div>
                 </div>
             </div>
+            {/*Side section*/}
             <div className="w-full lg:w-[400px] bg-background h-auto lg:h-[calc(100vh-80px)] px-4 py-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                     {videos.length > 0 && 'resourceId' in videos[0].snippet ? 'Playlist Videos' : 'Up Next'}
@@ -154,7 +180,7 @@ export default function VideoPlayer({
                                     <CardHeader className="flex-1 pl-4 flex items-center justify-between">
                                         <div>
                                             <CardTitle
-                                                className="text-sm text-foreground line-clamp-2">{item.snippet.title}</CardTitle>
+                                                className="text-sm text-foreground line-clamp-3">{item.snippet.title}</CardTitle>
                                             <CardDescription
                                                 className="text-xs text-muted-foreground line-clamp-2">{item.snippet.description}</CardDescription>
                                         </div>

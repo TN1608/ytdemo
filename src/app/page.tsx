@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {getPlaylistItems, getSavedVideos, index, removeVideo, saveVideo} from '@/services';
 import type {PlaylistItem, SearchResponse, SearchResult} from '@/types';
 import VideoPlayer from '@/components/VideoPlayer';
@@ -11,15 +11,31 @@ import {toast} from "sonner"
 
 export default function Home() {
     const [videos, setVideos] = useState<(PlaylistItem | SearchResult)[]>([]);
+    const [savedVideos, setSavedVideos] = useState<string[]>([]);
+
     const [currentVideoId, setCurrentVideoId] = useState<string>('imXIrrk1ftQ');
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+
 
     const handleVideoSelect = (videoId: string) => {
         setCurrentVideoId(videoId);
     };
 
+    const fetchSavedVideos = async () => {
+        try {
+            const resp = await getSavedVideos();
+            setSavedVideos(resp.videos.map((item: any) => item.videoId));
+            // setSavedVideos(resp.videos)
+        } catch (err: any) {
+            console.error('Error fetching saved videos:', err);
+            setError('Failed to fetch saved videos');
+        }
+    };
+
     useEffect(() => {
+        fetchSavedVideos();
+
         async function fetchVideos() {
             setLoading(true);
             setError(null);
@@ -51,6 +67,7 @@ export default function Home() {
             if (data.items.length > 0) {
                 setCurrentVideoId(data.items[0].id.videoId);
             }
+            console.log('Search results:', data.items);
         } catch (err: any) {
             setError('Failed to index videos: ' + (err.response?.data?.error || err.message));
         } finally {
@@ -62,6 +79,7 @@ export default function Home() {
         try {
             const response = await saveVideo(videoId);
             toast.success(response.message || 'Video saved successfully');
+            await fetchSavedVideos();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to save video');
         }
@@ -71,6 +89,7 @@ export default function Home() {
         try {
             const response = await removeVideo(videoId);
             toast.success(response.message || 'Video removed successfully');
+            await fetchSavedVideos()
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to remove video');
         }
@@ -82,17 +101,15 @@ export default function Home() {
             <main className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
                 <section className="flex-1">
                     {loading && <Skeleton className="h-8 w-1/3 mb-4"/>}
-                    {/*<h1 className="text-2xl font-bold mb-4">*/}
-                    {/*    {error ? error : videos.length > 0 && 'resourceId' in videos[0].snippet ? 'YouTube Playlist' : 'Search Results'}*/}
-                    {/*</h1>*/}
-                    {/*<Separator/>*/}
-                    {/*<h1 className="text-3xl uppercase font-bold mt-4 mb-2">*/}
-                    {/*    {videos.length > 0*/}
-                    {/*        ? videos[0]?.snippet.title*/}
-                    {/*        : 'Select a video to play'}*/}
-                    {/*</h1>*/}
-                    <VideoPlayer videoId={currentVideoId} videos={videos} onVideoSelect={handleVideoSelect}
-                                 onSave={handleSave} onRemove={handleRemove}/>
+                    <VideoPlayer
+                        key={currentVideoId}
+                        videoId={currentVideoId}
+                        videos={videos}
+                        onVideoSelect={handleVideoSelect}
+                        onSave={handleSave}
+                        onRemove={handleRemove}
+                        savedVideos={savedVideos}
+                    />
                 </section>
             </main>
         </div>
