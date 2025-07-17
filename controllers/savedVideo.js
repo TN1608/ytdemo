@@ -55,7 +55,7 @@ exports.getSavedVideos = async (req, res) => {
     try {
         const videos = await savedVideo.find({});
         if (videos.length === 0) {
-            return res.status(200).json({message: 'No videos found', videos: []});
+            return res.status(200).json(videos);
         }
         res.status(200).json(videos);
     } catch (err) {

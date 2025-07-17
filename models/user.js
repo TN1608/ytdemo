@@ -5,7 +5,7 @@ const PROVIDER = require("../config/enum/provider");
 
 const userSchema = new Schema({
     email: { type: String, unique: true, lowercase: true },
-    provider: { type: String, default: PROVIDER.GOOGLE },
+    provider: { type: String, default: PROVIDER.LOCAL },
     verified: { type: Boolean, default: false },
     password: String,
 })

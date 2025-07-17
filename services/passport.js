@@ -1,9 +1,11 @@
 const passport = require('passport');
 const user = require('../models/user');
 const config = require('../config');
+const PROVIDER = require("../config/enum/provider");
 const jwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const LocalStrategy = require('passport-local').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const localOptions = {
     usernameField: 'email'
@@ -43,5 +45,40 @@ const jwtLogin = new jwtStrategy(jwtOptions, async (payload, done) => {
     }
 });
 
+
+// Google OAuth Strategy
+const googleOptions = {
+    clientID: config.clientID,
+    clientSecret: config.clientSecret,
+    callbackURL: config.callbackURL
+};
+
+const googleLogin = new GoogleStrategy(googleOptions, async (accessToken, refreshToken, profile, done) => {
+    try{
+    //     Tim kiem user trong db theo email
+        let user = await user.findOne({ email: profile.emails[0].value });
+        if(user) {
+            user.provider = PROVIDER.GOOGLE;
+            user.verify = true;
+            await user.save();
+            return done(null, user);
+        }
+
+        // Neu khong co user -> tao moi
+        user = new user({
+            email: profile.emails[0].value,
+            provider: PROVIDER.GOOGLE,
+            verified: true,
+            password: null // Khong can mat khau cho user dang nhap bang Google
+        });
+        await user.save();
+        return done(null, user);
+    }catch (err){
+        return done(err);
+    }
+});
+
+
 passport.use(jwtLogin);
+passport.use(googleLogin);
 passport.use(localLogin);
