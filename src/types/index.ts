@@ -90,7 +90,6 @@ export interface SavedVideosResponse {
 
 export interface LikedVideo {
     id: string;
-    videoId: string;
     title: string;
     description: string;
     thumbnail: string;

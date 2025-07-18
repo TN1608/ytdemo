@@ -10,6 +10,14 @@ import {Badge} from "@/components/ui/badge";
 import {Switch} from "@/components/ui/switch";
 import {Minimize2} from 'lucide-react';
 import {useMiniPlayerStore} from "@/utils/miniPlayerStore";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface VideoPlayerProps {
     videoId: string;
@@ -42,7 +50,7 @@ export default function VideoPlayer({
     const [isDisliking, setIsDisliking] = useState<boolean>(false);
     const [isLiked, setIsLiked] = useState<boolean>(false);
     const [isDisliked, setIsDisliked] = useState<boolean>(false);
-    const { toggleMiniPlayer, setMiniPlayerVideoId } = useMiniPlayerStore();
+    const {toggleMiniPlayer, setMiniPlayerVideoId} = useMiniPlayerStore();
 
     const handleSave = async () => {
         if (onSave) {
@@ -114,10 +122,28 @@ export default function VideoPlayer({
         }
     };
 
+    const handleShare = (platform: string) => {
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        let shareUrl = '';
+
+        switch (platform) {
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
+                break;
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(videoUrl)}&text=${encodeURIComponent(videos.find(v => v.id === videoId)?.snippet.title || '')}`;
+                break;
+            default:
+                shareUrl = videoUrl;
+        }
+
+        window.open(shareUrl, '_blank');
+    }
+
     useEffect(() => {
         setIsSaved(savedVideos ? savedVideos.includes(videoId) : false);
-        setIsLiked(likedVideos ? likedVideos.some(video => video.videoId === videoId && video.status === true) : false);
-        setIsDisliked(likedVideos ? likedVideos.some(video => video.videoId === videoId && video.status === false) : false);
+        setIsLiked(likedVideos ? likedVideos.some(video => video.id === videoId && video.status === true) : false);
+        setIsDisliked(likedVideos ? likedVideos.some(video => video.id === videoId && video.status === false) : false);
     }, [videoId, savedVideos, likedVideos, dislikedVideos]);
 
     const handleToggleMiniPlayer = () => {
@@ -211,15 +237,34 @@ export default function VideoPlayer({
                             >
                                 {isSaving ? '...' : isSaved ? '✓ Đã lưu' : '🔖 Lưu'}
                             </Button>
-
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-full text-foreground hover:bg-card"
-                            >
-                                🔗 Chia sẻ
-                            </Button>
-
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="rounded-full text-foreground hover:bg-card"
+                                    >
+                                        🔗 Chia sẻ
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Chia sẻ video</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                        onClick={() => navigator.clipboard.writeText(`https://www.youtube.com/watch?v=${videoId}`)}>
+                                        Sao chép liên kết
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleShare('facebook')}>
+                                        Chia sẻ lên Facebook
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleShare('twitter')}>
+                                        Chia sẻ lên Twitter
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator/>
+                                    <DropdownMenuItem onClick={() => handleShare('copy')}>
+                                        Nhúng video
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -285,7 +330,7 @@ export default function VideoPlayer({
                         <Button
                             variant="default"
                             size="sm"
-                            className="bg-primary-foreground hover:bg-secondary text-primary font-medium rounded-full"
+                            className="bg-primary-foreground cursor-pointer border border-red-700 hover:border-red-300 hover:bg-secondary text-primary font-medium rounded-full"
                         >
                             Subscribe
                         </Button>
@@ -384,6 +429,7 @@ export default function VideoPlayer({
                             ? (item as PlaylistItem).snippet.resourceId?.videoId
                             : (item as SearchResult).id.videoId;
                         const itemId = typeof item.id === 'string' ? item.id : item.id?.videoId || JSON.stringify(item);
+                        const isSaved = savedVideos ? savedVideos.includes(itemVideoId || '') : false;
                         return (
                             <div
                                 key={itemId}
@@ -408,32 +454,75 @@ export default function VideoPlayer({
                                     <div>
                                         <p className="text-sm text-foreground font-medium line-clamp-2">{item.snippet.title}</p>
                                         <div className="flex items-center gap-1 mt-1">
-                                            <p className="text-xs text-muted-foreground">{item.snippet.channelTitle}</p>
+                                            <p className="text-xs text-muted-foreground truncate max-w-[120px]">{item.snippet.channelTitle}</p>
                                             {Math.random() > 0.7 && (
-                                                <div
-                                                    className="bg-muted-foreground bg-opacity-30 rounded-full w-3 h-3 flex items-center justify-center">
-                                                    <span className="text-[8px] text-foreground">✓</span>
-                                                </div>
+                                                <span
+                                                    className="ml-1 bg-muted-foreground bg-opacity-30 rounded-full w-4 h-4 flex items-center justify-center"
+                                                    title="Verified"
+                                                >
+                                                    <span className="text-[10px] text-foreground">✓</span>
+                                                </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center text-xs text-muted-foreground mt-0.5">
+                                        <div
+                                            className="flex items-center text-xs text-muted-foreground mt-0.5 space-x-1">
                                             <span>{Math.floor(Math.random() * 900) + 100}K lượt xem</span>
-                                            <span className="mx-1">•</span>
-                                            <span>{Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'tháng' : 'ngày'} trước</span>
+                                            <span aria-hidden="true">•</span>
+                                            <span>
+                                                {Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'tháng' : 'ngày'} trước
+                                            </span>
                                         </div>
                                         {Math.random() > 0.8 && (
-                                            <div
-                                                className="mt-1 bg-card text-[10px] text-foreground px-1 py-0.5 rounded inline-block">
+                                            <span
+                                                className="mt-1 bg-card text-[10px] text-blue-600 px-1.5 py-0.5 rounded font-semibold inline-block"
+                                            >
                                                 Mới
-                                            </div>
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-
                                 {/* Menu button */}
-                                <button className="text-muted-foreground hover:text-foreground p-1">
-                                    <BsThreeDotsVertical className="text-lg"/>
-                                </button>
+                                <div className="ml-2 flex items-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="p-1">
+                                                <BsThreeDotsVertical className="w-5 h-5 text-muted-foreground"/>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {isSaved ? (
+                                                <DropdownMenuItem onClick={handleRemove}>
+                                                    Bỏ lưu
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem onClick={handleSave}>
+                                                    Lưu video
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuSeparator/>
+                                            <DropdownMenuItem onClick={handleLike}>
+                                                {isLiked ? 'Bỏ thích' : 'Thích video'}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleDislike}>
+                                                {isDisliked ? 'Bỏ không thích' : 'Không thích video'}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator/>
+                                            <DropdownMenuItem onClick={() => handleShare('copy')}>
+                                                Sao chép liên kết
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('facebook')}>
+                                                Chia sẻ lên Facebook
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('twitter')}>
+                                                Chia sẻ lên Twitter
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator/>
+                                            <DropdownMenuItem onClick={() => handleShare('copy')}>
+                                                Nhúng video
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
                         );
                     })}

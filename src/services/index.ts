@@ -92,7 +92,7 @@ export const getSavedVideos = async () => {
 
 export const removeVideo = async (videoId: string) => {
     try {
-        const resp = await api.delete(`/videos/${videoId}`);
+        const resp = await api.delete('/deleteVideo', { data: { videoId } });
         return resp.data;
     } catch (err) {
         console.error('Error removing video:', err);

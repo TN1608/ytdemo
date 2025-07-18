@@ -57,7 +57,7 @@ const ProfilePage = () => {
                         orientation="vertical"
                         className="w-full flex-row"
                     >
-                        <TabsList className="flex-col">
+                        <TabsList className="flex-col h-fit">
                             <TabsTrigger value="tab-1" className="w-full">
                                 Liked Videos
                             </TabsTrigger>

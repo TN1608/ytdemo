@@ -30,7 +30,7 @@ export default function Home() {
     const fetchSavedVideos = async () => {
         try {
             const resp = await getSavedVideos();
-            setSavedVideos(resp.videos.map((item: any) => item.videoId));
+            setSavedVideos(resp.videos.map((item: any) => item.id));
             // setSavedVideos(resp.videos)
         } catch (err: any) {
             console.error('Error fetching saved videos:', err);
@@ -42,7 +42,7 @@ export default function Home() {
         try {
             const resp = await getLikedVideos();
             setLikedVideos(resp.videos);
-        }catch (err: any) {
+        } catch (err: any) {
             console.error('Error fetching liked videos:', err);
             setError('Failed to fetch liked videos');
         }
@@ -126,29 +126,29 @@ export default function Home() {
     };
 
     const handleLike = async (videoId: string) => {
-        try{
-            const isAlreadyLiked = likedVideos.some(video => video.videoId === videoId && video.status);
+        try {
+            const isAlreadyLiked = likedVideos.some(video => video.id === videoId && video.status);
             const status = !isAlreadyLiked;
-            if(!isAlreadyLiked) {
+            if (!isAlreadyLiked) {
                 const response = await likeVideo(videoId, true);
             }
             await fetchLikedVideos();
-        }catch (err: any) {
+        } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to like video');
         }
     }
 
-const handleDislike = async (videoId: string) => {
-    try {
-        const isAlreadyDisliked = likedVideos.some(video => video.videoId === videoId && video.status === false);
-        if (!isAlreadyDisliked) {
-            const response = await likeVideo(videoId, false);
-            await fetchLikedVideos();
+    const handleDislike = async (videoId: string) => {
+        try {
+            const isAlreadyDisliked = likedVideos.some(video => video.id === videoId && video.status === false);
+            if (!isAlreadyDisliked) {
+                const response = await likeVideo(videoId, false);
+                await fetchLikedVideos();
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to dislike video');
         }
-    } catch (err: any) {
-        toast.error(err.response?.data?.error || 'Failed to dislike video');
     }
-}
 
     const toggleMiniPlayer = () => {
         setIsMiniPlayerOpen(prev => !prev);
