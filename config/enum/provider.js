@@ -4,4 +4,4 @@ const PROVIDER = {
     FACEBOOK: 'facebook',
 }
 
-export default PROVIDER;
+module.exports = PROVIDER;

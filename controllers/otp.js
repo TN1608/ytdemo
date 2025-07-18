@@ -1,65 +1,5 @@
-const { createUser, getUserByEmail, comparePassword, updateUser, hashPassword} = require('../models/user');
-const jwt = require('jwt-simple');
-const config = require('../config');
-const passport = require('passport');
-const transporter = require('../config/nodemailer');
-const { db } = require('../config/firebase');
-const { doc, setDoc, getDoc, deleteDoc } = require('firebase/firestore');
-const PROVIDER = require('../config/enum/provider');
-
-function tokenForUser(user) {
-    const timestamp = new Date().getTime();
-    const expire = timestamp + 2 * 60 * 60 * 1000;
-    return jwt.encode(
-        {
-            sub: user.id,
-            iat: timestamp,
-            exp: expire,
-        },
-        config.secret
-    );
-}
-
-exports.signup = async function (req, res, next) {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(422).send({ error: 'Email and password are required' });
-    }
-
-    try {
-        const existingUser = await getUserByEmail(email);
-        if (existingUser) {
-            return res.status(422).send({ error: 'Email is already in use' });
-        }
-
-        const user = await createUser({ email, password });
-        res.json({ token: tokenForUser(user) });
-    } catch (err) {
-        console.error('Error signing up:', err.message);
-        return res.status(500).send({
-            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
-        });
-    }
-};
-
-exports.signin = [
-    passport.authenticate('local', { session: false }),
-    (req, res) => {
-        res.send({ token: tokenForUser(req.user) });
-    },
-];
-
-exports.googleAuth = passport.authenticate('google', { session: false, scope: ['profile', 'email'] });
-
-exports.googleAuthCallback = [
-    passport.authenticate('google', { session: false, failureRedirect: '/login' }),
-    (req, res) => {
-        const token = tokenForUser(req.user);
-        res.redirect(`http://localhost:3000/auth/callback?token=${token}`);
-    },
-];
-
+// API gửi OTP
+const {getUserByEmail, hashPassword} = require("../models/user");
 exports.sendOtp = async (req, res) => {
     try {
         const { email } = req.body;
@@ -67,17 +7,20 @@ exports.sendOtp = async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
+        // Kiểm tra người dùng tồn tại
         const user = await getUserByEmail(email);
         if (!user) {
             return res.status(404).json({ error: 'Email not found' });
         }
 
+        // Tạo mã OTP ngẫu nhiên (6 chữ số)
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        await setDoc(doc(db, 'otps', `${email}_${otp}`), {
+        // Lưu OTP vào Firestore
+        await db.collection('otps').doc(`${email}_${otp}`).set({
             email,
             otp,
-            createdAt: new Date().toISOString(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         // Gửi email chứa OTP
@@ -107,25 +50,27 @@ exports.verifyOtp = async (req, res) => {
             return res.status(400).json({ error: 'Email and OTP are required' });
         }
 
-        const otpDoc = await getDoc(doc(db, 'otps', `${email}_${otp}`));
-        if (!otpDoc.exists()) {
+        // Tìm OTP trong Firestore
+        const otpDoc = await db.collection('otps').doc(`${email}_${otp}`).get();
+        if (!otpDoc.exists) {
             return res.status(400).json({ error: 'Invalid or expired OTP' });
         }
 
         const otpData = otpDoc.data();
-        const createdAt = new Date(otpData.createdAt);
+        const createdAt = otpData.createdAt.toDate();
         const now = new Date();
-        const diff = (now - createdAt) / 1000;
+        const diff = (now - createdAt) / 1000; // Thời gian chênh lệch (giây)
 
+        // Kiểm tra OTP hết hạn (5 phút = 300 giây)
         if (diff > 300) {
-            await deleteDoc(doc(db, 'otps', `${email}_${otp}`));
+            await db.collection('otps').doc(`${email}_${otp}`).delete();
             return res.status(400).json({ error: 'OTP has expired' });
         }
 
         // Tìm và cập nhật người dùng
         const user = await getUserByEmail(email);
         if (!user) {
-            await deleteDoc(doc(db, 'otps', `${email}_${otp}`));
+            await db.collection('otps').doc(`${email}_${otp}`).delete();
             return res.status(404).json({ error: 'User not found' });
         }
 
@@ -133,7 +78,7 @@ exports.verifyOtp = async (req, res) => {
         await updateUser(email, { verified: true });
 
         // Xóa OTP sau khi xác minh
-        await deleteDoc(doc(db, 'otps', `${email}_${otp}`));
+        await db.collection('otps').doc(`${email}_${otp}`).delete();
 
         res.status(200).json({ success: true, message: 'OTP verified successfully, user verified' });
     } catch (err) {
@@ -165,10 +110,7 @@ exports.createPassword = [
 
             // Cập nhật mật khẩu
             const hashedPassword = await hashPassword(password);
-            await updateUser(user.id, {
-                password: hashedPassword,
-                provider: PROVIDER.LOCAL  // Chuyển provider sang LOCAL
-            });
+            await updateUser(user.id, { password: hashedPassword });
 
             res.json({ success: true, message: 'Password created successfully' });
         } catch (err) {

@@ -1,38 +1,63 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 const bcrypt = require('bcrypt-nodejs');
-const PROVIDER = require("../config/enum/provider");
+const PROVIDER = require('../config/enum/provider');
+const { db } = require('../config/firebase');
+const { doc, setDoc, getDoc, updateDoc } = require('firebase/firestore');
 
-const userSchema = new Schema({
-    email: { type: String, unique: true, lowercase: true },
-    provider: { type: String, default: PROVIDER.GOOGLE },
-    verified: { type: Boolean, default: false },
-    password: String,
-})
-
-userSchema.pre('save', function (next) {
-    const user = this;
-
-    if (!user.isModified('password')) return next();
-
-    bcrypt.genSalt(10, function (err, salt) {
-        if (err) return next(err);
-
-        bcrypt.hash(user.password, salt, null, function (err, hash) {
-            if (err) return next(err);
-            user.password = hash;
-            next();
+// Hàm hash mật khẩu
+const hashPassword = async (password) => {
+    return new Promise((resolve, reject) => {
+        bcrypt.genSalt(10, (err, salt) => {
+            if (err) return reject(err);
+            bcrypt.hash(password, salt, null, (err, hash) => {
+                if (err) return reject(err);
+                resolve(hash);
+            });
         });
-    });
-});
-
-userSchema.methods.comparePassword = function (candidatePassword, callback) {
-    bcrypt.compare(candidatePassword, this.password, function (err, isMatch) {
-        if (err) return callback(err);
-        callback(null, isMatch);
     });
 };
 
-const ModelClass = mongoose.models.user || mongoose.model('user', userSchema);
+// Hàm so sánh mật khẩu
+const comparePassword = (candidatePassword, hashedPassword) => {
+    return new Promise((resolve, reject) => {
+        bcrypt.compare(candidatePassword, hashedPassword, (err, isMatch) => {
+            if (err) return reject(err);
+            resolve(isMatch);
+        });
+    });
+};
 
-module.exports = ModelClass;
+// Hàm tạo người dùng
+const createUser = async ({ email, password, provider = PROVIDER.LOCAL, verified = false }) => {
+    const userRef = doc(db, 'users', email);
+    const hashedPassword = password ? await hashPassword(password) : null;
+    await setDoc(userRef, {
+        email,
+        provider,
+        verified,
+        password: hashedPassword,
+    });
+    return { id: email, email, provider, verified, password: hashedPassword };
+};
+
+// Hàm lấy người dùng theo email
+const getUserByEmail = async (email) => {
+    const userRef = doc(db, 'users', email);
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) return null;
+    return { id: userDoc.id, ...userDoc.data() };
+};
+
+// Hàm cập nhật người dùng
+const updateUser = async (email, updates) => {
+    const userRef = doc(db, 'users', email);
+    await updateDoc(userRef, updates);
+    return await getUserByEmail(email);
+};
+
+module.exports = {
+    hashPassword,
+    comparePassword,
+    createUser,
+    getUserByEmail,
+    updateUser,
+};

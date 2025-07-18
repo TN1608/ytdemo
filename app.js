@@ -11,9 +11,9 @@ var cors = require('cors');
 // var saveVideo = require('./routes/saveVideo');
 // var user = require('./routes/user');
 
-var mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const morgan = require('morgan');
+// var mongoose = require('mongoose');
+// const bodyParser = require('body-parser');
+// const morgan = require('morgan');
 
 var app = express();
 
@@ -28,10 +28,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({ origin: 'http://localhost:3000' }));
 //  DB SETUP
-mongoose.connect(process.env.MONGODB_URI)
-
-app.use(morgan('combined'));
-app.use(bodyParser.json({ type: '*/*' }));
+// mongoose.connect(process.env.MONGODB_URI)
+//
+// app.use(morgan('combined'));
+// app.use(bodyParser.json({ type: '*/*' }));
 
 const routes = require('./routes');
 app.use('/', routes);
