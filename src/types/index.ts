@@ -1,4 +1,4 @@
-//thumbnail types
+// thumbnail types
 export interface Thumbnail {
     url: string;
     width: number;
@@ -27,9 +27,53 @@ export interface Snippet {
     channelTitle: string;
     playlistId?: string; // Chỉ có trong playlistItems
     resourceId?: ResourceId; // Chỉ có trong playlistItems
+    tags?: string[]; // Thêm để hỗ trợ tags trong video snippet
+    categoryId?: string; // Thêm để hỗ trợ categoryId
+    liveBroadcastContent?: string; // Thêm để hỗ trợ liveBroadcastContent
+    localized?: {
+        title: string;
+        description: string;
+    }; // Thêm để hỗ trợ localized
+    defaultAudioLanguage?: string; // Thêm để hỗ trợ defaultAudioLanguage
 }
 
+// Định nghĩa kiểu cho contentDetails
+export interface ContentDetails {
+    duration: string; // Ví dụ: "PT4M59S"
+    dimension: string; // Ví dụ: "2d"
+    definition: string; // Ví dụ: "hd"
+    caption: string; // Ví dụ: "true"
+    licensedContent: boolean;
+    contentRating: Record<string, any>; // Có thể để Record vì contentRating có thể rỗng
+    projection: string; // Ví dụ: "rectangular"
+}
 
+// Định nghĩa kiểu cho statistics
+export interface Statistics {
+    viewCount: string;
+    likeCount: string;
+    favoriteCount: string;
+    commentCount: string;
+}
+
+// Định nghĩa kiểu cho Video (một item trong youtube#videoListResponse)
+export interface Video {
+    kind: string;
+    etag: string;
+    id: string;
+    snippet: Snippet;
+    contentDetails?: ContentDetails;
+    statistics?: Statistics;
+}
+
+export interface VideoListResponse {
+    kind: string; // Ví dụ: "youtube#videoListResponse"
+    etag: string;
+    items: Video[];
+    pageInfo: PageInfo;
+}
+
+// Định nghĩa kiểu PlaylistItem (kết quả playlist item)
 export interface PlaylistItem {
     kind: string;
     etag: string;
@@ -64,7 +108,7 @@ export interface PlaylistItemsResponse {
     items: PlaylistItem[];
 }
 
-// Định nghĩa kiểu response cho endpoint /index
+// Định nghĩa kiểu response cho endpoint /search
 export interface SearchResponse {
     kind: string;
     etag: string;
@@ -101,51 +145,3 @@ export interface LikedVideosResponse {
     message: string;
     videos: LikedVideo[];
 }
-
-
-//API ENDPOINT JSON
-// {
-//     "kind": "youtube#playlistItemListResponse",
-//     "etag": "some-etag",
-//     "nextPageToken": "CAoQAA",
-//     "pageInfo": {
-//     "totalResults": 100,
-//         "resultsPerPage": 10
-// },
-//     "items": [
-//     {
-//         "kind": "youtube#playlistItem",
-//         "etag": "some-etag",
-//         "id": "PL4cUxeGkcC9gZD-Tvwfodw5axV3HCr0y.1",
-//         "snippet": {
-//             "publishedAt": "2023-01-01T12:00:00Z",
-//             "channelId": "UC_x5XG1OV2P6uZZ5FSM9Ttw",
-//             "title": "Sample Video Title",
-//             "description": "This is a sample video.",
-//             "thumbnails": {
-//                 "default": {
-//                     "url": "https://i.ytimg.com/vi/abc123/default.jpg",
-//                     "width": 120,
-//                     "height": 90
-//                 },
-//                 "medium": {
-//                     "url": "https://i.ytimg.com/vi/abc123/mqdefault.jpg",
-//                     "width": 320,
-//                     "height": 180
-//                 },
-//                 "high": {
-//                     "url": "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
-//                     "width": 480,
-//                     "height": 360
-//                 }
-//             },
-//             "channelTitle": "Sample Channel",
-//             "playlistId": "PL4cUxeGkcC9gZD-Tvwfodw5axV3HCr0y",
-//             "resourceId": {
-//                 "kind": "youtube#video",
-//                 "videoId": "abc123"
-//             }
-//         }
-//     }
-// ]
-// }

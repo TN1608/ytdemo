@@ -1,6 +1,4 @@
 'use client'
-import Header from "@/components/fragments/Header";
-import {debounce} from "lodash";
 import {useRouter} from "next/navigation";
 import {
     Tabs,
@@ -17,12 +15,6 @@ const ProfilePage = () => {
     const router = useRouter();
     const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
     const [likedVideos, setLikedVideos] = useState<LikedVideo[]>([]);
-
-    const handleSearch = debounce((query: string) => {
-        if (query.trim()) {
-            router.push(`/?q=${encodeURIComponent(query)}`);
-        }
-    }, 500);
 
     const fetchSavedVideos = async () => {
         try {
@@ -49,7 +41,6 @@ const ProfilePage = () => {
 
     return (
         <div>
-            <Header onSearch={handleSearch}/>
             <main className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
                 <section className="flex-1">
                     <Tabs
@@ -70,7 +61,7 @@ const ProfilePage = () => {
                                 <div className="p-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                     {likedVideos.length > 0 ? (
                                         likedVideos.map(video => (
-                                            <Card key={video.videoId} className="flex flex-col h-full">
+                                            <Card key={video.id} className="flex flex-col h-full">
                                                 <CardHeader className="pb-2">
                                                     <h3 className="text-lg font-semibold truncate">{video.title}</h3>
                                                     <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>

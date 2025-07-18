@@ -1,15 +1,14 @@
 'use client';
 
-import type {LikedVideo, PlaylistItem, SearchResult} from '@/types';
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import type {LikedVideo, SearchResult, Video} from '@/types';
 import {Button} from '@/components/ui/button';
-import {useEffect, useState} from "react";
-import {BsThreeDotsVertical} from "react-icons/bs";
-import {AiOutlineDislike, AiOutlineLike} from "react-icons/ai";
-import {Badge} from "@/components/ui/badge";
-import {Switch} from "@/components/ui/switch";
+import {useCallback, useEffect, useState} from 'react';
+import {BsThreeDotsVertical} from 'react-icons/bs';
+import {AiOutlineDislike, AiOutlineLike} from 'react-icons/ai';
+import {Badge} from '@/components/ui/badge';
+import {Switch} from '@/components/ui/switch';
 import {Minimize2} from 'lucide-react';
-import {useMiniPlayerStore} from "@/utils/miniPlayerStore";
+import {useMiniPlayerStore} from '@/utils/miniPlayerStore';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,11 +16,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
+import {toast} from 'sonner';
+import {useAuth} from '@/context/AuthenticateProvider';
+import {getByVideoId} from '@/services';
 
 interface VideoPlayerProps {
     videoId: string;
-    videos: (PlaylistItem | SearchResult)[];
+    videos: SearchResult[];
     onVideoSelect: (videoId: string) => void;
     onSave?: (videoId: string) => void;
     onRemove?: (videoId: string) => void;
@@ -29,7 +31,6 @@ interface VideoPlayerProps {
     onDislike?: (videoId: string) => void;
     savedVideos?: string[];
     likedVideos?: LikedVideo[];
-    dislikedVideos?: string[];
 }
 
 export default function VideoPlayer({
@@ -42,7 +43,6 @@ export default function VideoPlayer({
                                         onDislike,
                                         savedVideos,
                                         likedVideos,
-                                        dislikedVideos,
                                     }: VideoPlayerProps) {
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -50,9 +50,38 @@ export default function VideoPlayer({
     const [isDisliking, setIsDisliking] = useState<boolean>(false);
     const [isLiked, setIsLiked] = useState<boolean>(false);
     const [isDisliked, setIsDisliked] = useState<boolean>(false);
+    const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
+    const {isAuthenticated} = useAuth();
     const {toggleMiniPlayer, setMiniPlayerVideoId} = useMiniPlayerStore();
+    const [autoplay, setAutoplay] = useState(true);
+
+    const getVideo = useCallback(async () => {
+        try {
+            const resp = await getByVideoId(videoId);
+            setCurrentVideo(resp.items[0]);
+            // console.log(resp.items[0])
+        } catch (err) {
+            console.error('Error fetching video:', err);
+            toast.error('Không thể tải video');
+        }
+    }, [videoId]);
+
+    useEffect(() => {
+        getVideo();
+    }, [getVideo]);
+
+    useEffect(() => {
+        setIsSaved(savedVideos ? savedVideos.includes(videoId) : false);
+        setIsLiked(likedVideos ? likedVideos.some((video) => video.id === videoId && video.status === true) : false);
+        setIsDisliked(likedVideos ? likedVideos.some((video) => video.id === videoId && video.status === false) : false);
+    }, [videoId, savedVideos, likedVideos]);
 
     const handleSave = async () => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để lưu video');
+            window.location.href = '/signin';
+            return;
+        }
         if (onSave) {
             setIsSaving(true);
             try {
@@ -67,6 +96,11 @@ export default function VideoPlayer({
     };
 
     const handleRemove = async () => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để bỏ lưu video');
+            window.location.href = '/signin';
+            return;
+        }
         if (onRemove) {
             setIsSaving(true);
             try {
@@ -81,18 +115,15 @@ export default function VideoPlayer({
     };
 
     const handleLike = async () => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để thích video');
+            window.location.href = '/signin';
+            return;
+        }
         if (onLike) {
             setIsLiking(true);
             try {
                 await onLike(videoId);
-                if (isLiked) {
-                    setIsLiked(false);
-                } else {
-                    setIsLiked(true);
-                    if (isDisliked) {
-                        setIsDisliked(false);
-                    }
-                }
             } catch (error) {
                 console.error('Error liking video:', error);
             } finally {
@@ -102,18 +133,15 @@ export default function VideoPlayer({
     };
 
     const handleDislike = async () => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để không thích video');
+            window.location.href = '/signin';
+            return;
+        }
         if (onDislike) {
             setIsDisliking(true);
             try {
                 await onDislike(videoId);
-                if (isDisliked) {
-                    setIsDisliked(false);
-                } else {
-                    setIsDisliked(true);
-                    if (isLiked) {
-                        setIsLiked(false);
-                    }
-                }
             } catch (error) {
                 console.error('Error disliking video:', error);
             } finally {
@@ -131,20 +159,16 @@ export default function VideoPlayer({
                 shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
                 break;
             case 'twitter':
-                shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(videoUrl)}&text=${encodeURIComponent(videos.find(v => v.id === videoId)?.snippet.title || '')}`;
+                shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(videoUrl)}&text=${encodeURIComponent(
+                    currentVideo?.snippet.title || ''
+                )}`;
                 break;
             default:
                 shareUrl = videoUrl;
         }
 
         window.open(shareUrl, '_blank');
-    }
-
-    useEffect(() => {
-        setIsSaved(savedVideos ? savedVideos.includes(videoId) : false);
-        setIsLiked(likedVideos ? likedVideos.some(video => video.id === videoId && video.status === true) : false);
-        setIsDisliked(likedVideos ? likedVideos.some(video => video.id === videoId && video.status === false) : false);
-    }, [videoId, savedVideos, likedVideos, dislikedVideos]);
+    };
 
     const handleToggleMiniPlayer = () => {
         setMiniPlayerVideoId(videoId);
@@ -160,7 +184,7 @@ export default function VideoPlayer({
                      style={{paddingBottom: '56.25%'}}>
                     <iframe
                         className="absolute top-0 left-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`}
+                        src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&rel=0&modestbranding=1`}
                         title="YouTube video player"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -172,33 +196,24 @@ export default function VideoPlayer({
                 <div className="w-full max-w-5xl mx-auto mt-4">
                     {/* Video title */}
                     <h1 className="text-xl lg:text-2xl font-semibold text-foreground mb-2 line-clamp-2">
-                        {videos.find((v) => {
-                            const isPlaylistItem = 'resourceId' in v.snippet;
-                            const vid = isPlaylistItem
-                                ? (v as PlaylistItem).snippet.resourceId?.videoId
-                                : (v as SearchResult).id.videoId;
-                            return vid === videoId;
-                        })?.snippet.title}
+                        {currentVideo?.snippet.title || 'Video Title'}
                     </h1>
 
                     {/* Video stats */}
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
                         <span>
-                            {(() => {
-                                const video = videos.find((item) => {
-                                    const isPlaylistItem = 'resourceId' in item.snippet;
-                                    const vid = isPlaylistItem
-                                        ? (item as PlaylistItem).snippet.resourceId?.videoId
-                                        : (item as SearchResult).id.videoId;
-                                    return vid === videoId;
-                                });
-                                if (!video?.snippet.publishedAt) return '';
-                                const date = new Date(video.snippet.publishedAt);
-                                return date.toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
-                            })()}
+                          {currentVideo?.snippet.publishedAt
+                              ? new Date(currentVideo.snippet.publishedAt).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})
+                              : ''}
                         </span>
                         <span className="mx-1">•</span>
-                        <span>123K views</span>
+                        <span>{currentVideo?.statistics?.viewCount ? `${parseInt(currentVideo.statistics.viewCount).toLocaleString()} lượt xem` : '123K lượt xem'}</span>
+                        <span className="mx-1">•</span>
+                        <span>
+              {currentVideo?.contentDetails?.duration
+                  ? formatDuration(currentVideo.contentDetails.duration)
+                  : 'Unknown duration'}
+            </span>
                     </div>
 
                     {/* Action buttons */}
@@ -213,8 +228,8 @@ export default function VideoPlayer({
                                     onClick={handleLike}
                                     disabled={isLiking}
                                 >
-                                    {isLiking ? '...' : <AiOutlineLike
-                                        className={isLiked ? 'fill-blue-700' : ''}/>} {isLiked ? 'Đã thích' : 'Thích'}
+                                    {isLiking ? '...' : <AiOutlineLike className={isLiked ? 'fill-blue-700' : ''}/>}
+                                    {isLiked ? `Đã thích (${currentVideo?.statistics?.likeCount || 0})` : `Thích (${currentVideo?.statistics?.likeCount || 0})`}
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -223,11 +238,10 @@ export default function VideoPlayer({
                                     onClick={handleDislike}
                                     disabled={isDisliking}
                                 >
-                                    {isDisliking ? '...' : <AiOutlineDislike
-                                        className={isDisliked ? 'fill-blue-700' : ''}/>}
+                                    {isDisliking ? '...' :
+                                        <AiOutlineDislike className={isDisliked ? 'fill-blue-700' : ''}/>}
                                 </Button>
                             </div>
-
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -239,11 +253,8 @@ export default function VideoPlayer({
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="rounded-full text-foreground hover:bg-card"
-                                    >
+                                    <Button variant="ghost" size="sm"
+                                            className="rounded-full text-foreground hover:bg-card">
                                         🔗 Chia sẻ
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -265,62 +276,28 @@ export default function VideoPlayer({
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-full text-foreground hover:bg-card"
-                            >
+                            <Button variant="ghost" size="sm" className="rounded-full text-foreground hover:bg-card">
                                 ⬇️ Tải xuống
                             </Button>
-
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-full text-foreground hover:bg-card"
-                            >
+                            <Button variant="ghost" size="sm" className="rounded-full text-foreground hover:bg-card">
                                 ✂️ Cắt
                             </Button>
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-full text-foreground hover:bg-card"
-                            onClick={handleToggleMiniPlayer}
-                        >
+                        <Button variant="ghost" size="sm" className="rounded-full text-foreground hover:bg-card"
+                                onClick={handleToggleMiniPlayer}>
                             <Minimize2 className="w-4 h-4 mr-1"/> Mini Player
                         </Button>
                     </div>
 
                     {/* Channel info */}
                     <div className="flex items-start gap-3 mb-4 p-3 bg-card rounded-xl">
-                        {(() => {
-                            const thumbnailUrl = videos.find((item) => {
-                                const isPlaylistItem = 'resourceId' in item.snippet;
-                                const vid = isPlaylistItem
-                                    ? (item as PlaylistItem).snippet.resourceId?.videoId
-                                    : (item as SearchResult).id.videoId;
-                                return vid === videoId;
-                            })?.snippet.thumbnails?.default?.url;
-                            return thumbnailUrl ? (
-                                <img
-                                    src={thumbnailUrl}
-                                    alt="Channel Thumbnail"
-                                    className="w-12 h-12 rounded-full"
-                                />
-                            ) : null;
-                        })()}
+                        {currentVideo?.snippet.thumbnails?.default?.url && (
+                            <img src={currentVideo.snippet.thumbnails.default.url} alt="Channel Thumbnail"
+                                 className="w-12 h-12 rounded-full"/>
+                        )}
                         <div className="flex-1">
                             <div className="flex items-center">
-                                <p className="text-base font-medium text-foreground">
-                                    {videos.find((item) => {
-                                        const isPlaylistItem = 'resourceId' in item.snippet;
-                                        const vid = isPlaylistItem
-                                            ? (item as PlaylistItem).snippet.resourceId?.videoId
-                                            : (item as SearchResult).id.videoId;
-                                        return vid === videoId;
-                                    })?.snippet.channelTitle}
-                                </p>
+                                <p className="text-base font-medium text-foreground">{currentVideo?.snippet.channelTitle || 'Channel Name'}</p>
                                 <Badge className="ml-2 rounded-full w-6 h-6 flex items-center justify-center p-0">
                                     <span className="text-[12px]">✓</span>
                                 </Badge>
@@ -343,37 +320,31 @@ export default function VideoPlayer({
                             <div className="flex-1 border-t border-muted"></div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                            <span>123,456 lượt xem</span>
+                            <span>{currentVideo?.statistics?.viewCount ? `${parseInt(currentVideo.statistics.viewCount).toLocaleString()} lượt xem` : '123,456 lượt xem'}</span>
                             <span className="mx-1">•</span>
                             <span>
-                                {(() => {
-                                    const video = videos.find((item) => {
-                                        const isPlaylistItem = 'resourceId' in item.snippet;
-                                        const vid = isPlaylistItem
-                                            ? (item as PlaylistItem).snippet.resourceId?.videoId
-                                            : (item as SearchResult).id.videoId;
-                                        return vid === videoId;
-                                    });
-                                    if (!video?.snippet.publishedAt) return '';
-                                    const date = new Date(video.snippet.publishedAt);
-                                    return date.toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
-                                })()}
-                            </span>
+                {currentVideo?.snippet.publishedAt
+                    ? new Date(currentVideo.snippet.publishedAt).toLocaleDateString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })
+                    : ''}
+              </span>
                             <span className="mx-1">•</span>
-                            <span className="text-blue-400 hover:text-blue-500 cursor-pointer">#hashtag</span>
-                            <span className="text-blue-400 hover:text-blue-500 cursor-pointer">#video</span>
+                            <span>
+                {currentVideo?.snippet.tags?.map((tag, index) => (
+                    <span key={index} className="text-blue-400 hover:text-blue-500 cursor-pointer">
+                    #{tag}{' '}
+                  </span>
+                ))}
+              </span>
                         </div>
                         <p className="text-sm text-foreground leading-relaxed line-clamp-3">
-                            {videos.find((v) => {
-                                const isPlaylistItem = 'resourceId' in v.snippet;
-                                const vid = isPlaylistItem
-                                    ? (v as PlaylistItem).snippet.resourceId?.videoId
-                                    : (v as SearchResult).id.videoId;
-                                return vid === videoId;
-                            })?.snippet.description}
+                            {currentVideo?.snippet.description || 'Video Description'}
                         </p>
-                        <button className="text-sm text-muted-foreground hover:text-foreground mt-2 font-medium">
-                            Xem thêm
+                        <button className="text-sm text-muted-foreground hover:text-foreground mt-2 font-medium">Xem
+                            thêm
                         </button>
                     </div>
                 </div>
@@ -383,21 +354,13 @@ export default function VideoPlayer({
             <div className="w-full lg:w-[400px] bg-background h-auto lg:h-[calc(100vh-80px)] px-4 py-6">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-base font-medium text-foreground">
-                            {videos.length > 0 && 'resourceId' in videos[0].snippet ? 'Danh sách phát' : 'Tiếp theo'}
-                        </h2>
-                        {videos.length > 0 && 'resourceId' in videos[0].snippet && (
-                            <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">{videos.length}</span> video
-                            </div>
-                        )}
+                        <h2 className="text-base font-medium text-foreground">Video liên quan</h2>
+                        {videos.length > 0 &&
+                            <div className="text-xs text-muted-foreground">{videos.length} video</div>}
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Tự động phát</span>
-                        <Switch
-                            id="autoplay"
-                            defaultChecked
-                        />
+                        <Switch id="autoplay" checked={autoplay} onCheckedChange={setAutoplay}/>
                     </div>
                 </div>
 
@@ -423,13 +386,12 @@ export default function VideoPlayer({
 
                 {/* Recommended videos */}
                 <div className="space-y-3">
-                    {videos?.map((item, index) => {
-                        const isPlaylistItem = 'resourceId' in item.snippet;
-                        const itemVideoId = isPlaylistItem
-                            ? (item as PlaylistItem).snippet.resourceId?.videoId
-                            : (item as SearchResult).id.videoId;
+                    {videos?.map((item) => {
+                        const itemVideoId = 'resourceId' in item.snippet ? item.snippet.resourceId?.videoId : item.id.videoId;
                         const itemId = typeof item.id === 'string' ? item.id : item.id?.videoId || JSON.stringify(item);
                         const isSaved = savedVideos ? savedVideos.includes(itemVideoId || '') : false;
+                        const isLiked = likedVideos ? likedVideos.some((video) => video.id === itemVideoId && video.status === true) : false;
+                        const isDisliked = likedVideos ? likedVideos.some((video) => video.id === itemVideoId && video.status === false) : false;
                         return (
                             <div
                                 key={itemId}
@@ -458,26 +420,20 @@ export default function VideoPlayer({
                                             {Math.random() > 0.7 && (
                                                 <span
                                                     className="ml-1 bg-muted-foreground bg-opacity-30 rounded-full w-4 h-4 flex items-center justify-center"
-                                                    title="Verified"
-                                                >
-                                                    <span className="text-[10px] text-foreground">✓</span>
-                                                </span>
+                                                    title="Verified">
+                          <span className="text-[10px] text-foreground">✓</span>
+                        </span>
                                             )}
                                         </div>
                                         <div
                                             className="flex items-center text-xs text-muted-foreground mt-0.5 space-x-1">
                                             <span>{Math.floor(Math.random() * 900) + 100}K lượt xem</span>
                                             <span aria-hidden="true">•</span>
-                                            <span>
-                                                {Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'tháng' : 'ngày'} trước
-                                            </span>
+                                            <span>{Math.floor(Math.random() * 11) + 1} {Math.random() > 0.5 ? 'tháng' : 'ngày'} trước</span>
                                         </div>
                                         {Math.random() > 0.8 && (
                                             <span
-                                                className="mt-1 bg-card text-[10px] text-blue-600 px-1.5 py-0.5 rounded font-semibold inline-block"
-                                            >
-                                                Mới
-                                            </span>
+                                                className="mt-1 bg-card text-[10px] text-blue-600 px-1.5 py-0.5 rounded font-semibold inline-block">Mới</span>
                                         )}
                                     </div>
                                 </div>
@@ -491,35 +447,25 @@ export default function VideoPlayer({
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             {isSaved ? (
-                                                <DropdownMenuItem onClick={handleRemove}>
-                                                    Bỏ lưu
-                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={handleRemove}>Bỏ lưu</DropdownMenuItem>
                                             ) : (
-                                                <DropdownMenuItem onClick={handleSave}>
-                                                    Lưu video
-                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={handleSave}>Lưu video</DropdownMenuItem>
                                             )}
                                             <DropdownMenuSeparator/>
-                                            <DropdownMenuItem onClick={handleLike}>
-                                                {isLiked ? 'Bỏ thích' : 'Thích video'}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleDislike}>
-                                                {isDisliked ? 'Bỏ không thích' : 'Không thích video'}
-                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={handleLike}>{isLiked ? 'Bỏ thích' : 'Thích video'}</DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={handleDislike}>{isDisliked ? 'Bỏ không thích' : 'Không thích video'}</DropdownMenuItem>
                                             <DropdownMenuSeparator/>
-                                            <DropdownMenuItem onClick={() => handleShare('copy')}>
-                                                Sao chép liên kết
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleShare('facebook')}>
-                                                Chia sẻ lên Facebook
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleShare('twitter')}>
-                                                Chia sẻ lên Twitter
-                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('copy')}>Sao chép liên
+                                                kết</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('facebook')}>Chia sẻ lên
+                                                Facebook</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('twitter')}>Chia sẻ lên
+                                                Twitter</DropdownMenuItem>
                                             <DropdownMenuSeparator/>
-                                            <DropdownMenuItem onClick={() => handleShare('copy')}>
-                                                Nhúng video
-                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleShare('copy')}>Nhúng
+                                                video</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -530,4 +476,14 @@ export default function VideoPlayer({
             </div>
         </div>
     );
+}
+
+// Hàm helper để format duration từ định dạng ISO 8601 (PT4M59S)
+function formatDuration(duration: string): string {
+    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    if (!match) return 'Unknown duration';
+    const hours = match[1] ? parseInt(match[1]) : 0;
+    const minutes = match[2] ? parseInt(match[2]) : 0;
+    const seconds = match[3] ? parseInt(match[3]) : 0;
+    return `${hours ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }

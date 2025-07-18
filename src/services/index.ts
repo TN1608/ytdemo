@@ -1,9 +1,10 @@
 import api from "@/utils/axios";
-import type {PlaylistItemsResponse, SearchResponse} from "@/types";
+import type {PlaylistItemsResponse, SearchResponse, VideoListResponse} from "@/types";
 
 interface searchParams {
     query: string,
     maxResults?: number;
+    relatedToVideoId?: string;
 }
 
 interface getPlaylistItemsParams {
@@ -12,11 +13,10 @@ interface getPlaylistItemsParams {
 }
 
 // params: ?part=snippet&maxResults=10&playlistId=YOUR_PLAYLIST_ID&key=${process.env.YOUTUBE_API_KEY}
-export const index = async (query: string, maxResults: number = 10): Promise<SearchResponse> => {
+export const search = async (query: string, maxResults: number = 10): Promise<SearchResponse> => {
     try {
         const resp = await api.get<SearchResponse>('/search', {
             params: {
-                part: 'snippet',
                 query,
                 maxResults,
             },
@@ -117,6 +117,20 @@ export const getLikedVideos = async () => {
     } catch (err) {
         console.error('Error fetching liked videos:', err);
         throw new Error('Failed to fetch liked videos');
+    }
+}
+
+export const getByVideoId = async (videoId: string) => {
+    try {
+        const resp = await api.get('/getById', {
+            params: {
+                videoId
+            }
+        });
+        return resp.data;
+    } catch (err) {
+        console.error('Error fetching video by ID:', err);
+        throw new Error('Failed to fetch video by ID');
     }
 }
 

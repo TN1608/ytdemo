@@ -5,6 +5,9 @@ import {Toaster} from "@/components/ui/sonner";
 import {ThemeProvider} from "@/context/ThemeProvider";
 import MiniPlayer from "@/components/MiniPlayer";
 import MiniPlayerWrapper from "@/context/MiniPlayerWrapper";
+import Header from "@/components/fragments/Header";
+import {AuthProvider} from "@/context/AuthenticateProvider";
+import {SearchProvider} from "@/context/SearchProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -51,11 +54,16 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
         >
-            <div className="flex flex-col min-h-screen">
-                {children}
-                <MiniPlayerWrapper />
-                <Toaster/>
-            </div>
+            <AuthProvider>
+                <SearchProvider>
+                    <div className="flex flex-col min-h-screen">
+                        <Header />
+                        {children}
+                        <MiniPlayerWrapper />
+                        <Toaster />
+                    </div>
+                </SearchProvider>
+            </AuthProvider>
         </ThemeProvider>
         </body>
         </html>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {index} from "@/services";
+import {search} from "@/services";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const data = await index({ query, maxResults });
+        const data = await search({ query, maxResults });
         return NextResponse.json(data);
     } catch (error) {
         console.error('Error in API route:', error);

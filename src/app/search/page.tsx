@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {useSearchParams, useRouter} from 'next/navigation';
 import {search, getSavedVideos, getLikedVideos, saveVideo, removeVideo, likeVideo} from '@/services';
 import type {SearchResult, LikedVideo} from '@/types';
@@ -8,23 +8,21 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {toast} from 'sonner';
 import Link from 'next/link';
 import {debounce} from 'lodash';
-import {useAuth} from "@/context/AuthenticateProvider";
 import {Button} from "@/components/ui/button";
-import {useSearch} from "@/context/SearchProvider";
+import {useAuth} from "@/context/AuthenticateProvider";
 import VideoLists from "@/components/VideoLists";
 
-export default function Home() {
+export default function SearchPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const {isAuthenticated} = useAuth();
-    const {setSearchHandler} = useSearch();
     const [videos, setVideos] = useState<SearchResult[]>([]);
     const [savedVideos, setSavedVideos] = useState<string[]>([]);
     const [likedVideos, setLikedVideos] = useState<LikedVideo[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchVideos = async (query: string = '') => {
+    const fetchVideos = async (query: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -64,39 +62,29 @@ export default function Home() {
 
     useEffect(() => {
         const query = searchParams.get('q');
-        fetchVideos(query || 'US UK Music');
+        if (query) {
+            fetchVideos(query);
+        }
         if (isAuthenticated) {
             fetchSavedVideos();
             fetchLikedVideos();
         }
     }, [searchParams, isAuthenticated]);
 
-    const debouncedSearch = useMemo(
-        () => debounce(async (query: string) => {
-            try {
-                await fetchVideos(query);
-                router.push(`/search?q=${encodeURIComponent(query)}`);
-            } catch (err: any) {
-                toast.error(err.response?.data?.error || 'Failed to search videos');
-            }
-        }, 500),
-        [router] // add dependencies as needed
-    );
-
-    useEffect(() => {
-        setSearchHandler(debouncedSearch);
-        return () => {
-            setSearchHandler(() => {
-            });
-        };
-    }, [setSearchHandler, debouncedSearch]);
-
+    const handleSearch = debounce(async (query: string) => {
+        try {
+            await fetchVideos(query);
+            router.push(`/search?q=${encodeURIComponent(query)}`);
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to search videos');
+        }
+    }, 500);
 
     const handleSave = async (videoId: string) => {
         if (!isAuthenticated) {
             toast.error('Vui lòng đăng nhập để lưu video');
             localStorage.setItem('redirectUrl', window.location.href);
-            window.location.href = '/signin';
+            window.location.href = '/login';
             return;
         }
         try {
@@ -112,7 +100,7 @@ export default function Home() {
         if (!isAuthenticated) {
             toast.error('Vui lòng đăng nhập để bỏ lưu video');
             localStorage.setItem('redirectUrl', window.location.href);
-            window.location.href = '/signin';
+            window.location.href = '/login';
             return;
         }
         try {
@@ -123,14 +111,47 @@ export default function Home() {
             toast.error(err.response?.data?.error || 'Failed to remove video');
         }
     };
+
+    const handleLike = async (videoId: string) => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để thích video');
+            localStorage.setItem('redirectUrl', window.location.href);
+            window.location.href = '/login';
+            return;
+        }
+        try {
+            await likeVideo(videoId, true);
+            toast.success('Video liked successfully');
+            await fetchLikedVideos();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to like video');
+        }
+    };
+
+    const handleDislike = async (videoId: string) => {
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để không thích video');
+            localStorage.setItem('redirectUrl', window.location.href);
+            window.location.href = '/login';
+            return;
+        }
+        try {
+            await likeVideo(videoId, false);
+            toast.success('Video disliked successfully');
+            await fetchLikedVideos();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to dislike video');
+        }
+    };
+
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">{searchParams.get('q') ? 'Kết quả tìm kiếm' : 'Videos Phổ biến'}</h1>
+            <h1 className="text-2xl font-bold mb-4">Kết quả tìm kiếm</h1>
             {loading && <Skeleton className="h-8 w-full mb-4"/>}
             {error && <p className="text-red-500">{error}</p>}
             {!isAuthenticated && (
                 <p className="text-sm text-muted-foreground mb-4">
-                    <Link href="/signin" className="text-blue-500 hover:underline">
+                    <Link href="/login" className="text-blue-500 hover:underline">
                         Đăng nhập
                     </Link>{' '}
                     để lưu hoặc thích video
