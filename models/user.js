@@ -27,7 +27,7 @@ const comparePassword = (candidatePassword, hashedPassword) => {
 };
 
 // Hàm tạo người dùng
-const createUser = async ({ email, password, provider = PROVIDER.LOCAL, verified = false }) => {
+const createUser = async ({ email, password, provider = PROVIDER.LOCAL,googleId,  verified = false }) => {
     const userRef = doc(db, 'users', email);
     const hashedPassword = password ? await hashPassword(password) : null;
     await setDoc(userRef, {
@@ -35,8 +35,9 @@ const createUser = async ({ email, password, provider = PROVIDER.LOCAL, verified
         provider,
         verified,
         password: hashedPassword,
+        googleId: googleId || null,
     });
-    return { id: email, email, provider, verified, password: hashedPassword };
+    return { id: email, email, provider, verified, password: hashedPassword, googleId: googleId || null };
 };
 
 // Hàm lấy người dùng theo email

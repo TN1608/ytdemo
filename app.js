@@ -4,6 +4,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+require('./services/passport')
 
 var cors = require('cors');
 // var getPlaylist = require('./routes/getPlaylist');
@@ -12,8 +13,8 @@ var cors = require('cors');
 // var user = require('./routes/user');
 
 // var mongoose = require('mongoose');
-// const bodyParser = require('body-parser');
-// const morgan = require('morgan');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({ origin: 'http://localhost:3000' }));
+
 //  DB SETUP
 // mongoose.connect(process.env.MONGODB_URI)
 //

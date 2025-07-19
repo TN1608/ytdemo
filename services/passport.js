@@ -1,5 +1,5 @@
 const passport = require('passport');
-const { getUserByEmail, comparePassword } = require('../models/user');
+const { getUserByEmail, comparePassword, createUser, updateUser } = require('../models/user');
 const config = require('../config');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
@@ -50,31 +50,44 @@ const googleOptions = {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.CALLBACK_URL,
-    scope: ['profile', 'email'],
 };
 const googleLogin = new GoogleStrategy(googleOptions, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails[0].value;
         let user = await getUserByEmail(email);
-        if (user) {
-            await updateDoc(doc(db, 'users', email), {
+
+        if (!user) {
+            // Create new user if not exists
+            user = await createUser({
+                email,
                 provider: PROVIDER.GOOGLE,
+                googleId: profile.id,
                 verified: true,
             });
-            user = await getUserByEmail(email);
-            return done(null, user);
+        } else if (user.provider !== PROVIDER.GOOGLE) {
+            // Update existing user to Google provider
+            await updateDoc(doc(db, 'users', user.id), { provider: PROVIDER.GOOGLE, googleId: profile.id });
+            user.provider = PROVIDER.GOOGLE;
         }
-
-        user = await createUser({
-            email,
-            provider: PROVIDER.GOOGLE,
-            verified: true,
-        });
-        done(null, user);
+        console.log(`User authenticated with Google: ${user.email}`);
+        return done(null, user);
     } catch (err) {
-        done(err, false);
+        return done(err);
     }
 });
+
+passport.serializeUser((user, done) => {
+    done(null, user.id);
+})
+
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await getUserByEmail(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
+})
 
 passport.use(jwtLogin);
 passport.use(localLogin);
