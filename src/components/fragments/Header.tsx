@@ -14,7 +14,7 @@ import {useSearchHandler} from "@/context/SearchProvider";
 
 const Header = () => {
     const [searchQuery, setSearchQuery] = useState<string>('');
-    const { isAuthenticated, logout } = useAuth();
+    const { isAuthenticated, logout, currentUser } = useAuth();
     const onSearch = useSearchHandler();
 
     const handleSearch = (e: FormEvent) => {
@@ -76,13 +76,25 @@ const Header = () => {
             </form>
             <div className="flex items-center gap-2">
                 {isAuthenticated ? (
-                    <Button variant="outline" onClick={logout}>
-                        Đăng xuất
-                    </Button>
+                    <>
+                        <div className={"flex items-center gap-2"}>
+                            <span className={"text-foreground font-semibold"}>
+                                Welcome, {currentUser?.email || 'User'}
+                            </span>
+                            <Button variant="outline" onClick={logout}>
+                                Sign out
+                            </Button>
+                        </div>
+                    </>
                 ) : (
-                    <Link href="/signin">
-                        <Button variant="outline">Đăng nhập</Button>
-                    </Link>
+                    <div className={"flex items-center gap-2"}>
+                        <Link href="/signin">
+                            <Button variant="outline">Sign in</Button>
+                        </Link>
+                        <Link href="/signup">
+                            <Button variant="outline">Sign up</Button>
+                        </Link>
+                    </div>
                 )}
                 <ThemeToggleButton variant="circle-blur" start="bottom-right" />
             </div>

@@ -2,7 +2,7 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import {useSearchParams, useRouter} from 'next/navigation';
-import {search, getSavedVideos, getLikedVideos, saveVideo, removeVideo, likeVideo} from '@/services';
+import {search, getSavedVideos, getLikedVideos, saveVideo, removeVideo, likeVideo} from '@/services/video';
 import type {SearchResult, LikedVideo} from '@/types';
 import {Skeleton} from '@/components/ui/skeleton';
 import {toast} from 'sonner';

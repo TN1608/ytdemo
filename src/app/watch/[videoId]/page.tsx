@@ -2,7 +2,7 @@
 
 import {useCallback, useEffect, useState} from 'react';
 import {useParams, useSearchParams} from 'next/navigation';
-import {getLikedVideos, getPlaylistItems, getSavedVideos, saveVideo, removeVideo, likeVideo, search} from '@/services';
+import {getLikedVideos, getPlaylistItems, getSavedVideos, saveVideo, removeVideo, likeVideo, search} from '@/services/video';
 import type {LikedVideo, PlaylistItem, SearchResponse, SearchResult} from '@/types';
 import VideoPlayer from '@/components/VideoPlayer';
 import {Skeleton} from '@/components/ui/skeleton';

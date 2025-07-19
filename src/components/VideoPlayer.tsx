@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {toast} from 'sonner';
 import {useAuth} from '@/context/AuthenticateProvider';
-import {getByVideoId} from '@/services';
+import {getByVideoId} from '@/services/video';
 
 interface VideoPlayerProps {
     videoId: string;
