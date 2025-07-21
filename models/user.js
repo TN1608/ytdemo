@@ -1,7 +1,9 @@
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt-nodejs');
-const PROVIDER = require('../config/enum/provider');
+const PROVIDER = require('../constants/enum/provider');
 const { db } = require('../config/firebase');
 const { doc, setDoc, getDoc, updateDoc } = require('firebase/firestore');
+const config = require('../config');
 
 // Hàm hash mật khẩu
 const hashPassword = async (password) => {
@@ -27,13 +29,16 @@ const comparePassword = (candidatePassword, hashedPassword) => {
 };
 
 // Hàm tạo người dùng
-const createUser = async ({ email, password, provider = PROVIDER.LOCAL,googleId,  verified = false }) => {
+const createUser = async ({ username, email, password, provider = PROVIDER.LOCAL,googleId,  verified = false }) => {
     const userRef = doc(db, 'users', email);
     const hashedPassword = password ? await hashPassword(password) : null;
     await setDoc(userRef, {
+        username,
         email,
         provider,
         verified,
+        friends:[],
+        friendRequests: [],
         password: hashedPassword,
         googleId: googleId || null,
     });
@@ -54,6 +59,15 @@ const updateUser = async (email, updates) => {
     await updateDoc(userRef, updates);
     return await getUserByEmail(email);
 };
+const getUserFromToken = async (token) => {
+    try{
+        const decoded = jwt.verify(token, config.secret);
+        return await getUserByEmail(decoded.sub);
+    }catch (err){
+        console.error('Token verification failed:', err.message);
+        return null;
+    }
+}
 
 module.exports = {
     hashPassword,
@@ -61,4 +75,5 @@ module.exports = {
     createUser,
     getUserByEmail,
     updateUser,
+    getUserFromToken,
 };

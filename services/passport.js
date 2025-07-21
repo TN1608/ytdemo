@@ -5,7 +5,7 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const PROVIDER = require('../config/enum/provider');
+const PROVIDER = require('../constants/enum/provider');
 const { db } = require('../config/firebase');
 const { doc, updateDoc } = require('firebase/firestore');
 
@@ -59,6 +59,7 @@ const googleLogin = new GoogleStrategy(googleOptions, async (accessToken, refres
         if (!user) {
             // Create new user if not exists
             user = await createUser({
+                username: profile.displayName || email.split('@')[0],
                 email,
                 provider: PROVIDER.GOOGLE,
                 googleId: profile.id,

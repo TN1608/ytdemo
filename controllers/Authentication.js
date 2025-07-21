@@ -5,7 +5,8 @@ const passport = require('passport');
 const transporter = require('../config/nodemailer');
 const {db} = require('../config/firebase');
 const {doc, setDoc, getDoc, deleteDoc} = require('firebase/firestore');
-const PROVIDER = require('../config/enum/provider');
+const PROVIDER = require('../constants/enum/provider');
+const ERROR_CODES = require('../constants/errorCodes');
 
 function tokenForUser(user) {
     const timestamp = new Date().getTime();
@@ -38,7 +39,7 @@ exports.signup = async function (req, res, next) {
     } catch (err) {
         console.error('Error signing up:', err.message);
         return res.status(500).send({
-            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+            error: process.env.NODE_ENV === 'development' ? err.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
         });
     }
 };
@@ -54,7 +55,7 @@ exports.signinjwt = [
     passport.authenticate('jwt', {session: false}),
     (req, res) => {
         if (!req.user) {
-            return res.status(401).json({error: 'User not authenticated'});
+            return res.status(401).json({error: ERROR_CODES.UNAUTHORIZED});
         }
         res.send({token: tokenForUser(req.user)});
     }
@@ -69,7 +70,7 @@ exports.googleAuthCallback = [
     }),
     (req, res) => {
         if (!req.user) {
-            return res.status(401).json({error: 'User not authenticated'});
+            return res.status(401).json({error: ERROR_CODES.UNAUTHORIZED});
         }
         // Nếu người dùng đã đăng nhập bằng Google, tạo token và chuyển hướng
         const token = tokenForUser(req.user);
@@ -154,7 +155,7 @@ exports.sendOtp = async (req, res) => {
     } catch (err) {
         console.error('Error sending OTP:', err.message);
         res.status(500).json({
-            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+            error: process.env.NODE_ENV === 'development' ? err.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
         });
     }
 };
@@ -199,7 +200,7 @@ exports.verifyOtp = async (req, res) => {
     } catch (err) {
         console.error('Error verifying OTP:', err.message);
         res.status(500).json({
-            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+            error: process.env.NODE_ENV === 'development' ? err.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
         });
     }
 };
@@ -223,13 +224,14 @@ exports.createPassword = [
             const hashedPassword = await hashPassword(password);
             await updateUser(user.id, {
                 password: hashedPassword,
+                hasPassword: true,
             });
 
             res.json({success: true, message: 'Password created successfully'});
         } catch (err) {
             console.error('Error creating password:', err.message);
             res.status(500).json({
-                error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+                error: process.env.NODE_ENV === 'development' ? err.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
             });
         }
     },
@@ -246,17 +248,51 @@ exports.getUserProfile = [
 
             // Trả về thông tin người dùng
             res.json({
-                id: user.id,
+                username: user.username || 'Anonymous',
                 email: user.email,
                 provider: user.provider,
                 verified: user.verified,
                 googleId: user.googleId || null,
+                friends: user.friends || [],
+                friendRequests: user.friendRequests || [],
+                hasPassword: !!user.password,
             });
         } catch (err) {
             console.error('Error fetching user profile:', err.message);
             res.status(500).json({
-                error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+                error: process.env.NODE_ENV === 'development' ? err.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
             });
         }
     },
 ];
+
+exports.findByEmail = async (req, res) => {
+    const {email} = req.query;
+    if (!email) {
+        return res.status(400).json({error: ERROR_CODES.EMAIL_IS_REQUIRED});
+    }
+
+    try {
+        const user = await getUserByEmail(email);
+        if (!user) {
+            return res.status(404).json({error: ERROR_CODES.USER_NOT_FOUND});
+        }
+
+        res.json({
+            message: 'User found successfully', user: {
+                username: user.username || 'Anonymous',
+                email: user.email,
+                provider: user.provider,
+                verified: user.verified,
+                friends: user.friends || [],
+                friendRequests: user.friendRequests || [],
+                googleId: user.googleId || null,
+            }
+        });
+    } catch (error) {
+        console.error('Error finding user by email:', error.message);
+        res.status(500).json({
+            error: process.env.NODE_ENV === 'development' ? error.message : ERROR_CODES.INTERNAL_SERVER_ERROR,
+        });
+    }
+}

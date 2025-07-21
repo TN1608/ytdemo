@@ -22,4 +22,6 @@ router.post('/api/verifyOtp', Authentication.verifyOtp);
 router.post('/api/createPassword', Authentication.createPassword);
 router.get('/api/getUser', requireAuth, Authentication.getUserProfile);
 
+router.get('/api/getUserByEmail', Authentication.findByEmail)
+
 module.exports = router;
