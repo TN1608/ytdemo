@@ -20,6 +20,8 @@ import {
 import {toast} from 'sonner';
 import {useAuth} from '@/context/AuthenticateProvider';
 import {getByVideoId} from '@/services/video';
+import Comments from "@/components/Comments";
+import Link from "next/link";
 
 interface VideoPlayerProps {
     videoId: string;
@@ -59,7 +61,6 @@ export default function VideoPlayer({
         try {
             const resp = await getByVideoId(videoId);
             setCurrentVideo(resp.items[0]);
-            // console.log(resp.items[0])
         } catch (err) {
             console.error('Error fetching video:', err);
             toast.error('Không thể tải video');
@@ -201,11 +202,11 @@ export default function VideoPlayer({
 
                     {/* Video stats */}
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
-                        <span>
-                          {currentVideo?.snippet.publishedAt
-                              ? new Date(currentVideo.snippet.publishedAt).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})
-                              : ''}
-                        </span>
+            <span>
+              {currentVideo?.snippet.publishedAt
+                  ? new Date(currentVideo.snippet.publishedAt).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})
+                  : ''}
+            </span>
                         <span className="mx-1">•</span>
                         <span>{currentVideo?.statistics?.viewCount ? `${parseInt(currentVideo.statistics.viewCount).toLocaleString()} lượt xem` : '123K lượt xem'}</span>
                         <span className="mx-1">•</span>
@@ -347,6 +348,21 @@ export default function VideoPlayer({
                             thêm
                         </button>
                     </div>
+
+                    {isAuthenticated && (
+                        <Comments videoId={videoId}/>
+                    )}
+                    {!isAuthenticated && (
+                        <div className="bg-card rounded-xl p-4 mb-6">
+                            <p className="text-sm text-muted-foreground mb-2">Đăng nhập để bình luận</p>
+                            <Link href="/signin">
+                                <Button variant="outline" size="sm"
+                                        className="bg-primary-foreground text-primary font-medium rounded-full">
+                                    Đăng nhập
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -421,8 +437,8 @@ export default function VideoPlayer({
                                                 <span
                                                     className="ml-1 bg-muted-foreground bg-opacity-30 rounded-full w-4 h-4 flex items-center justify-center"
                                                     title="Verified">
-                          <span className="text-[10px] text-foreground">✓</span>
-                        </span>
+                                              <span className="text-[10px] text-foreground">✓</span>
+                                            </span>
                                             )}
                                         </div>
                                         <div
