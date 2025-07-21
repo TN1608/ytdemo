@@ -91,7 +91,6 @@ export default function Home() {
         };
     }, [setSearchHandler, debouncedSearch]);
 
-
     const handleSave = async (videoId: string) => {
         if (!isAuthenticated) {
             toast.error('Vui lòng đăng nhập để lưu video');

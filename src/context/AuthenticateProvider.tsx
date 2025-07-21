@@ -41,9 +41,10 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         }
     }, []);
 
-    const login = (token: string) => {
+    const login = async (token: string) => {
         localStorage.setItem('token', token);
         setIsAuthenticated(true);
+        await fetchCurrentUser();
     };
 
     const logout = () => {

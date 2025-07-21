@@ -29,15 +29,15 @@ export default function SignInPage() {
         setLoading(true);
         setError('');
         try {
-            const tokenSigned = localStorage.getItem('token');
-            if(tokenSigned) {
-                const resp = await jwtLogin(email, password);
-                const {token} = resp;
-                login(token);
-                toast.success('Sign in successful');
-                router.push('/');
-                return;
-            }
+            // const tokenSigned = localStorage.getItem('token');
+            // if(tokenSigned) {
+            //     const resp = await jwtLogin(email, password);
+            //     const {token} = resp;
+            //     login(token);
+            //     toast.success('Sign in successful');
+            //     router.push('/');
+            //     return;
+            // }
             const resp = await localLogin(email, password);
             const {token} = resp;
             login(token);

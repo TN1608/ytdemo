@@ -79,7 +79,7 @@ const Header = () => {
                     <>
                         <div className={"flex items-center gap-2"}>
                             <span className={"text-foreground font-semibold"}>
-                                Welcome, {currentUser?.email || 'User'}
+                                Welcome, {currentUser?.username || 'User'}
                             </span>
                             <Button variant="outline" onClick={logout}>
                                 Sign out
