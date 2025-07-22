@@ -8,6 +8,8 @@ import MiniPlayerWrapper from "@/context/MiniPlayerWrapper";
 import Header from "@/components/fragments/Header";
 import {AuthProvider} from "@/context/AuthenticateProvider";
 import {SearchProvider} from "@/context/SearchProvider";
+import ChatButton from "@/components/chat/ChatButton";
+import {LanguageProvider} from "@/context/LanguageProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -54,16 +56,19 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
         >
-            <AuthProvider>
-                <SearchProvider>
-                    <div className="flex flex-col min-h-screen">
-                        <Header />
-                        {children}
-                        <MiniPlayerWrapper />
-                        <Toaster />
-                    </div>
-                </SearchProvider>
-            </AuthProvider>
+            <LanguageProvider>
+                <AuthProvider>
+                    <SearchProvider>
+                        <div className="flex flex-col min-h-screen">
+                            <Header/>
+                            <MiniPlayerWrapper/>
+                            {children}
+                            <ChatButton/>
+                            <Toaster/>
+                        </div>
+                    </SearchProvider>
+                </AuthProvider>
+            </LanguageProvider>
         </ThemeProvider>
         </body>
         </html>

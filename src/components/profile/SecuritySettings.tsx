@@ -143,9 +143,6 @@ export default function SecuritySettings({
                     </div>
                 )}
             </div>
-            <Separator/>
-            <h2 className={"text-lg font-semibold mb-4"}>Friends</h2>
-            <FriendLists/>
         </div>
     );
 }
